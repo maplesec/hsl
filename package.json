@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/maplesec/hsl#readme",
   "dependencies": {
+    "acl": "^0.4.11",
     "babel": "^6.23.0",
     "babel-preset-es2015": "^6.24.1",
     "babel-register": "^6.26.0",

@@ -9,6 +9,10 @@ auth=false
 2. 管理员启动cmd, 输入命令
 `mongod.exe --config mongo.config --install --serviceName "mongo"`
 
+移除
+
+`mongod.exe --remove --serviceName "mongo"`
+
 # 启动mongo
 
 `net start mongo`

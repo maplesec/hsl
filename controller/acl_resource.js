@@ -66,6 +66,9 @@ class Resource extends BaseComponent{
         }
         try{
             await ResourceModel.findOneAndRemove({id: resource_id});
+            await global.acl.removeResource(resource_id, function(err){
+                console.log("delete:", err, resource_id);
+            })
             res.send({
                 status: 1,
                 success: '删除地址成功'

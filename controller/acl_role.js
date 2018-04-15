@@ -77,6 +77,14 @@ class Role extends BaseComponent{
     }
     async getAddRoleById(req, res, next){
         const role_id = req.params.role_id;
+        function _f(){
+            return new Promise(function(resolve,reject){
+                global.acl.whatResources(role_id, function(err, resources){
+                    console.log("getAddRoleById:",err)
+                    resolve(resources);
+                })
+            })
+        }
         if(!role_id || !Number(role_id)){
             res.send({
                 type: 'ERROR_PARAMS',
@@ -85,8 +93,11 @@ class Role extends BaseComponent{
             return
         }
         try{
-            const role = await RoleModel.findOne({id: role_id});
-            res.send(role);
+            let role = await RoleModel.findOne({id: role_id});
+            console.log("received req getAddRoleById")
+            const resources =  await _f();
+            console.log("resources:", resources)
+             res.send(role);
         }catch(err){
             console.log('获取地址信息失败', err);
             res.send({
@@ -134,6 +145,30 @@ class Role extends BaseComponent{
                     message: '编辑地址失败'
                 })
             }
+        })
+    }
+
+    async allow(req, res, next){
+        const role_id = req.params.role_id;
+        const form = new formidable.IncomingForm();
+        console.log("do allow action:", role_id)
+        const _f = function(){
+            return new Promise(function(resolve, reject){
+                global.acl.allow(role_id, form.resources, '*', function(err){
+                    resolve(err);
+                })
+            })
+
+        }
+
+        form.parse(req, async(err, fields, files) => {
+            console.log("now awaiting");
+            const allow_result = await _f();
+            console.log('allow:', allow_result);
+            res.send({
+                status: 1,
+                success: '角色赋权成功'
+            })
         })
     }
 

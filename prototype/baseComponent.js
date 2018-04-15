@@ -2,7 +2,7 @@ import Ids from '../models/ids'
 
 export default class BaseComponent{
     constructor(){
-        this.idList = ['address_id'];
+        this.idList = ['address_id','user_id','role_id','resource_id'];
     }
     async getId(type){
         if(!this.idList.includes(type)){

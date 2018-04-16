@@ -152,9 +152,9 @@ class Role extends BaseComponent{
         const role_id = req.params.role_id;
         const form = new formidable.IncomingForm();
         console.log("do allow action:", role_id)
-        const _f = function(){
+        const _f = function(fields){
             return new Promise(function(resolve, reject){
-                global.acl.allow(role_id, form.resources, '*', function(err){
+                global.acl.allow(role_id, fields.resources, '*', function(err){
                     resolve(err);
                 })
             })
@@ -163,7 +163,7 @@ class Role extends BaseComponent{
 
         form.parse(req, async(err, fields, files) => {
             console.log("now awaiting");
-            const allow_result = await _f();
+            const allow_result = await _f(fields);
             console.log('allow:', allow_result);
             res.send({
                 status: 1,

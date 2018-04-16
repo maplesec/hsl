@@ -2,15 +2,14 @@
 
 import mongoose from 'mongoose';
 import acl from 'acl';
-let url = "mongodb://localhost/test";
+let url = "mongodb://test:test@localhost/test";
 mongoose.connect(url);
 
 const db = mongoose.connection;
 
 db.once('open', () => {
     console.log('连接数据库成功')
-    console.log(db);
-    global.acl = new acl(new acl.mongodbBackend(db, 'acl_'));
+    global.acl = new acl(new acl.mongodbBackend(db.db, 'acl_'));
 })
 
 db.on('error', function(error){

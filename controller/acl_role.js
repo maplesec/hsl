@@ -2,6 +2,7 @@
 
 import BaseComponent from '../prototype/baseComponent'
 import RoleModel from '../models/acl_role'
+import ResourceModel from '../models/acl_resource'
 import formidable from 'formidable'
 
 class Role extends BaseComponent{
@@ -54,6 +55,20 @@ class Role extends BaseComponent{
     }
     async deleteRole(req, res, next){
         const {role_id} = req.params;
+        function _f1(role_id, resources){
+            return new Promise(function(resolve,reject){
+                global.acl.removeAllow(role_id, resources, function(err){
+                    resolve(err);
+                })
+            })
+        }
+        function _f2(role_id){
+            return new Promise(function(resolve,reject){
+                global.acl.removeRole(role_id, function(err){
+                    resolve(err);
+                })
+            })
+        }
         if(!role_id || !Number(role_id)){
             res.send({
                 type: 'ERROR_PARAMS',
@@ -63,6 +78,13 @@ class Role extends BaseComponent{
         }
         try{
             await RoleModel.findOneAndRemove({id: role_id});
+            const resourceList = await ResourceModel.find();
+            let resources = [];
+            resourceList.forEach(function(item){
+                resources.push(item.id);
+            });
+            await _f1(role_id, resources);
+            await _f2(role_id);
             res.send({
                 status: 1,
                 success: '删除成功'
@@ -148,29 +170,197 @@ class Role extends BaseComponent{
         })
     }
 
+    async getRoleUsers(req, res, next){
+        const role_id = req.params.role_id;
+        function _f(role_id){
+            return new Promise(function(resolve,reject){
+                global.acl.roleUsers(role_id, function(err, resources){
+                    resolve(resources);
+                })
+            })
+        }
+        try{
+            if(!role_id || !Number(role_id)){
+                throw new Error('参数错误')
+            }
+        }catch(err){
+            console.log(err.message);
+            res.send({
+                status: 0,
+                type: 'GET_WRONG_PARAM',
+                message: err.message
+            })
+            return
+        }
+        try{
+            const _result = await _f(role_id);
+            res.send(_result);
+        }
+        catch(err){
+            console.log('获取角色用户失败', err);
+            res.send({
+                type: 'ERROR_GET_ROLE_USER',
+                message: '获取角色用户失败'
+            })
+        }
+    }
+
     async allow(req, res, next){
         const role_id = req.params.role_id;
         const form = new formidable.IncomingForm();
-        console.log("do allow action:", role_id)
-        const _f = function(fields){
+        const _f = function(resources, permissions){
             return new Promise(function(resolve, reject){
-                global.acl.allow(role_id, fields.resources, '*', function(err){
+                global.acl.allow(role_id, resources, permissions, function(err){
                     resolve(err);
                 })
             })
-
         }
-
         form.parse(req, async(err, fields, files) => {
-            console.log("now awaiting");
-            const allow_result = await _f(fields);
-            console.log('allow:', allow_result);
-            res.send({
-                status: 1,
-                success: '角色赋权成功'
-            })
+            const {resources} = fields;
+            let {permissions} = fields;
+            try{
+                if(!resources){
+                    throw new Error('参数错误')
+                }
+                if(!permissions){
+                    permissions = '*';
+                }
+            }catch(err){
+                console.log(err.message);
+                res.send({
+                    status: 0,
+                    type: 'GET_WRONG_PARAM',
+                    message: err.message
+                })
+                return
+            }
+
+            try{
+                const allow_result = await _f(resources, permissions);
+                res.send({
+                    status: 1,
+                    success: '角色赋权成功'
+                })
+            }
+            catch(err){
+                res.send({
+                    status: 0,
+                    type: 'GET_WRONG_PARAM',
+                    message: '角色赋权失败'
+                })
+            }
         })
     }
 
+    async removeAllow(req, res, next){
+        const role_id = req.params.role_id;
+        const form = new formidable.IncomingForm();
+        const _f = function(resources, permissions){
+            return new Promise(function(resolve, reject){
+                global.acl.removeAllow(role_id, resources, permissions, function(err){
+                    resolve(err);
+                })
+            })
+        }
+        form.parse(req, async(err, fields, files) => {
+            const {resources} = fields;
+            let {permissions} = fields;
+            try{
+                if(!resources){
+                    throw new Error('参数错误')
+                }
+                if(!permissions){
+                    permissions = '*';
+                }
+            }catch(err){
+                console.log(err.message);
+                res.send({
+                    status: 0,
+                    type: 'GET_WRONG_PARAM',
+                    message: err.message
+                })
+                return
+            }
+
+            try{
+                const allow_result = await _f(resources, permissions);
+                res.send({
+                    status: 1,
+                    success: '角色赋权成功'
+                })
+            }
+            catch(err){
+                res.send({
+                    status: 0,
+                    type: 'GET_WRONG_PARAM',
+                    message: '角色赋权失败'
+                })
+            }
+        })
+    }
+
+    async setAllow(req, res, next) {
+        const role_id = req.params.role_id;
+        const form = new formidable.IncomingForm();
+        const _f1 = function(resources, permissions){
+            return new Promise(function(resolve, reject){
+                global.acl.removeAllow(role_id, resources, permissions, function(err){
+                    resolve(err);
+                })
+            })
+        }
+        const _f2 = function(resources, permissions){
+            return new Promise(function(resolve, reject){
+                global.acl.allow(role_id, resources, permissions, function(err){
+                    resolve(err);
+                })
+            })
+        }
+        form.parse(req, async(err, fields, files) => {
+            const {new_resources} = fields;
+            let {permissions} = fields;
+            try{
+                if(!resources){
+                    throw new Error('参数错误')
+                }
+                if(!permissions){
+                    permissions = '*';
+                }
+            }catch(err){
+                console.log(err.message);
+                res.send({
+                    status: 0,
+                    type: 'GET_WRONG_PARAM',
+                    message: err.message
+                })
+                return
+            }
+
+
+            try{
+                const old_resource_list = await _f(resources, permissions);
+                let old_resources = [];
+                old_resource_list.forEach(function(item){
+                    old_resources.push(item.id);
+                })
+                await _f1(old_resources, permissions);
+                await _f2(new_resources, permissions)
+                res.send({
+                    status: 1,
+                    success: '角色赋权成功'
+                })
+            }
+            catch(err){
+                res.send({
+                    status: 0,
+                    type: 'GET_WRONG_PARAM',
+                    message: '角色赋权失败'
+                })
+            }
+        })
+
+
+
+    }
 }
 export default new Role()

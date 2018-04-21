@@ -2,6 +2,8 @@
 
 import BaseComponent from '../prototype/baseComponent'
 import UserModel from '../models/acl_user'
+import ResourceModel from '../models/acl_resource'
+import RoleModel from '../models/acl_role'
 import formidable from 'formidable'
 
 class User extends BaseComponent{
@@ -60,6 +62,20 @@ class User extends BaseComponent{
     }
     async deleteUser(req, res, next){
         const {user_id} = req.params;
+        function _f1(user_id){
+            return new Promise(function(resolve,reject){
+                global.acl.userRoles(user_id, function(err, roles){
+                    resolve(roles);
+                })
+            })
+        }
+        function _f2(user_id, roles){
+            return new Promise(function(resolve,reject){
+                global.acl.removeUserRoles(role_id, roles, function(err){
+                    resolve(err);
+                })
+            })
+        }
         if(!user_id || !Number(user_id)){
             res.send({
                 type: 'ERROR_PARAMS',
@@ -69,6 +85,8 @@ class User extends BaseComponent{
         }
         try{
             await UserModel.findOneAndRemove({id: user_id});
+            const roles = await _f1(user_id);
+            await _f2(user_id, roles);
             res.send({
                 status: 1,
                 success: '删除地址成功'
@@ -83,6 +101,13 @@ class User extends BaseComponent{
     }
     async getAddUserById(req, res, next){
         const user_id = req.params.user_id;
+        function _f1(user_id, resources){
+            return new Promise(function(resolve,reject){
+                global.acl.allowedPermissions(user_id, resources, function(err, obj){
+                    resolve(obj);
+                })
+            })
+        }
         if(!user_id || !Number(user_id)){
             res.send({
                 type: 'ERROR_PARAMS',
@@ -91,7 +116,14 @@ class User extends BaseComponent{
             return
         }
         try{
-            const user = await UserModel.findOne({id: user_id});
+            const resourceList = await ResourceModel.find();
+            let resources = [];
+            resourceList.forEach(function(item){
+                resources.push(item.id);
+            });
+            const permissions = await _f1(user_id, resources);
+            let user = await UserModel.findOne({id: user_id});
+            user.permissions = permissions;
             res.send(user);
         }catch(err){
             console.log('获取地址信息失败', err);
@@ -144,6 +176,192 @@ class User extends BaseComponent{
                     status: 0,
                     type: 'ERROR_UPDATE_USER',
                     message: '编辑地址失败'
+                })
+            }
+        })
+    }
+    async addUserRoles(){
+        const user_id = req.params.user_id;
+        const form = new formidable.IncomingForm();
+        const _f = function(roles){
+            return new Promise(function(resolve, reject){
+                global.acl.addUserRoles(user_id, roles, function(err){
+                    resolve(err);
+                })
+            })
+
+        }
+        form.parse(req, async(err, fields, files) => {
+            const {roles} = fields;
+            try{
+                if(!user_id || !Number(user_id)){
+                    throw new Error('参数错误')
+                }
+                if(!roles){
+                    throw new Error('参数错误')
+                }
+            }catch(err){
+                console.log(err.message);
+                res.send({
+                    status: 0,
+                    type: 'GET_WRONG_PARAM',
+                    message: err.message
+                })
+                return
+            }
+            try{
+                const _result = await _f(roles);
+                res.send({
+                    status: 1,
+                    success: '添加角色成功'
+                })
+            }catch(err){
+                console.log('添加角色失败', err);
+                res.send({
+                    status: 0,
+                    type: 'ERROR_UPDATE_USER_ROLE',
+                    message: '添加角色失败'
+                })
+            }
+        })
+    }
+
+    async removeUserRoles(){
+        const user_id = req.params.user_id;
+        const form = new formidable.IncomingForm();
+        const _f = function(roles){
+            return new Promise(function(resolve, reject){
+                global.acl.removeUserRoles(user_id, roles, function(err){
+                    resolve(err);
+                })
+            })
+
+        }
+        form.parse(req, async(err, fields, files) => {
+            const {roles} = fields;
+            try{
+                if(!user_id || !Number(user_id)){
+                    throw new Error('参数错误')
+                }
+                if(!roles){
+                    throw new Error('参数错误')
+                }
+            }catch(err){
+                console.log(err.message);
+                res.send({
+                    status: 0,
+                    type: 'GET_WRONG_PARAM',
+                    message: err.message
+                })
+                return
+            }
+            try{
+                const _result = await _f(roles);
+                res.send({
+                    status: 1,
+                    success: '解除角色成功'
+                })
+            }catch(err){
+                console.log('解除角色失败', err);
+                res.send({
+                    status: 0,
+                    type: 'ERROR_UPDATE_USER_ROLE',
+                    message: '解除角色失败'
+                })
+            }
+        })
+    }
+
+    async getUserRoles(req, res, next){
+        const user_id = req.params.user_id;
+        function _f(user_id){
+            return new Promise(function(resolve,reject){
+                global.acl.userRoles(user_id, function(err, resources){
+                    resolve(resources);
+                })
+            })
+        }
+        try{
+            if(!user_id || !Number(user_id)){
+                throw new Error('参数错误')
+            }
+        }catch(err){
+            console.log(err.message);
+            res.send({
+                status: 0,
+                type: 'GET_WRONG_PARAM',
+                message: err.message
+            })
+            return
+        }
+        try{
+            const _result = await _f(user_id);
+            res.send(_result);
+        }
+        catch(err){
+            console.log('获取用户角色失败', err);
+            res.send({
+                type: 'ERROR_GET_USER_ROLE',
+                message: '获取用户角色失败'
+            })
+        }
+    }
+
+    async setUserRoles(req, res, next){
+        const user_id = req.params.user_id;
+        function _f1(user_id){
+            return new Promise(function(resolve,reject){
+                global.acl.userRoles(user_id, function(err, old_roles){
+                    resolve(old_roles);
+                })
+            })
+        }
+        function _f2(user_id, roles_to_remove){
+            return new Promise(function(resolve,reject){
+                global.acl.removeUserRoles(user_id, roles_to_remove, function(err){
+                    resolve(err);
+                })
+            })
+        }
+        function _f3(user_id, roles_to_add){
+            return new Promise(function(resolve,reject){
+                global.acl.addUserRoles(user_id, roles_to_add, function(err){
+                    resolve(err);
+                })
+            })
+        }
+        form.parse(req, async(err, fields, files) => {
+            const {roles} = fields;
+            try{
+                if(!user_id || !Number(user_id)){
+                    throw new Error('参数错误')
+                }
+                if(!roles){
+                    throw new Error('参数错误')
+                }
+            }catch(err){
+                console.log(err.message);
+                res.send({
+                    status: 0,
+                    type: 'GET_WRONG_PARAM',
+                    message: err.message
+                })
+                return
+            }
+            try{
+                const _now = await _f1(user_id);
+                await _f2(user_id, _now);
+                await _f3(user_id, roles);
+                res.send({
+                    status: 1,
+                    success: '设定角色成功'
+                })
+            }catch(err){
+                console.log('设定角色失败', err);
+                res.send({
+                    status: 0,
+                    type: 'ERROR_UPDATE_USER_ROLE',
+                    message: '设定角色失败'
                 })
             }
         })

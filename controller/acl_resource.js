@@ -57,6 +57,13 @@ class Resource extends BaseComponent{
     }
     async deleteResource(req, res, next){
         const {resource_id} = req.params;
+        function _f(resource_id){
+            return new Promise(function(resolve,reject){
+                global.acl.removeResource(resource_id, function(err){
+                    resolve(err);
+                })
+            })
+        }
         if(!resource_id || !Number(resource_id)){
             res.send({
                 type: 'ERROR_PARAMS',
@@ -66,9 +73,7 @@ class Resource extends BaseComponent{
         }
         try{
             await ResourceModel.findOneAndRemove({id: resource_id});
-            await global.acl.removeResource(resource_id, function(err){
-                console.log("delete:", err, resource_id);
-            })
+            await _f(resource_id);
             res.send({
                 status: 1,
                 success: '删除地址成功'

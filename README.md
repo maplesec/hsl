@@ -36,3 +36,11 @@ db.system.users.find()
 
 # 开启认证
 mongo.config 中auth设置为true
+
+
+# node_acl
+
+与mongoose配合, 必须使用mongoose中的db实例
+
+node_acl的实质是处理user-role-resource之间的关系, 但是不直接管理他们本身
+

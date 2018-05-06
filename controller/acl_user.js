@@ -71,7 +71,7 @@ class User extends BaseComponent{
         }
         function _f2(user_id, roles){
             return new Promise(function(resolve,reject){
-                global.acl.removeUserRoles(role_id, roles, function(err){
+                global.acl.removeUserRoles(user_id, roles, function(err){
                     resolve(err);
                 })
             })

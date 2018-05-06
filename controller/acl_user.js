@@ -108,6 +108,13 @@ class User extends BaseComponent{
                 })
             })
         }
+        function _f2(user_id){
+            return new Promise(function(resolve, reject){
+                global.acl.userRoles(user_id, function(err, roles){
+                    resolve(roles);
+                })
+            })
+        }
         if(!user_id || !Number(user_id)){
             res.send({
                 type: 'ERROR_PARAMS',
@@ -122,9 +129,11 @@ class User extends BaseComponent{
                 resources.push(item.id);
             });
             const permissions = await _f1(user_id, resources);
-            let user = await UserModel.findOne({id: user_id});
-            user.permissions = permissions;
-            res.send(user);
+            const roles = await _f2(user_id);
+            const user_obj = await UserModel.findOne({id: user_id});
+            const {id, name, account} = user_obj;
+            const mix = { id, name, account, permissions, roles };
+            res.send(mix);
         }catch(err){
             console.log('获取地址信息失败', err);
             res.send({
@@ -309,6 +318,7 @@ class User extends BaseComponent{
 
     async setUserRoles(req, res, next){
         const user_id = req.params.user_id;
+        const form = new formidable.IncomingForm();
         function _f1(user_id){
             return new Promise(function(resolve,reject){
                 global.acl.userRoles(user_id, function(err, old_roles){

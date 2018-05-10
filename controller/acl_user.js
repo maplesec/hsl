@@ -12,10 +12,71 @@ class User extends BaseComponent{
         this.addUser = this.addUser.bind(this);
     }
 
+    // TODO 查重接口
+
     async getUser(req,res,next){
         const userList = await UserModel.find();
         res.send(userList);
     }
+
+    async getUserPage(req, res, next) {
+        // 页码, 每页数量, 筛选值, 正序倒序
+        const {page, pageSize, filter = '', sort = 'desc', sortBy = ''} = req.query;
+        let sortObj = {'_id': -1}
+        try {
+            if(page && pageSize){
+                if (typeof(Number(page)) !== 'number' || !(/^[1-9]\d*$/.test(page))) {
+                    throw new Error('page参数错误')
+                } else if (!Number(pageSize)) {
+                    throw new Error('pageSize参数错误')
+                }
+            }
+            if (sortBy) {
+                sortObj = {};
+                sortObj[sortBy] = sort === 'asc' ? 1 : -1;
+            }
+        } catch (err) {
+            res.send({
+                status: 0,
+                type: 'ERROR_PARAMS',
+                message: err.message
+            })
+            return
+        }
+        try {
+            const offset = (page - 1) * pageSize;
+            let action;
+            let actionCount;
+            if (filter) {
+                action = UserModel.find({$or: [{name: eval('/' + filter + '/gi')}, {account: eval('/' + filter + '/gi')}]});
+                actionCount = UserModel.find({$or: [{name: eval('/' + filter + '/gi')}, {account: eval('/' + filter + '/gi')}]}).count();
+            }
+            else{
+                action = UserModel.find();
+                actionCount = UserModel.find().count();
+            }
+            if(page && pageSize){
+                action = action.limit(Number(pageSize)).skip(Number(offset)).sort(sortObj);
+            }
+            const totalCount = await actionCount.count();
+            const result = await action;
+            res.send({
+                status: 1,
+                type: 'SUCCESS',
+                response: {
+                    totalCount,
+                    result
+                }
+            })
+        } catch (err) {
+            res.send({
+                status: 0,
+                type: 'ERROR_DB',
+                message: err.message
+            })
+        }
+    }
+
     async addUser(req, res, next){
         const form = new formidable.IncomingForm();
         form.parse(req, async (err, fields, files) => {

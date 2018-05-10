@@ -44,3 +44,18 @@ mongo.config 中auth设置为true
 
 node_acl的实质是处理user-role-resource之间的关系, 但是不直接管理他们本身
 
+
+结果返回格式
+{
+    status: 0,
+    type: 'ERROR_PARAMS',
+    message: '错误详细描述'
+    response: {
+        totalCount: 100,
+        result: []
+    }
+}
+status:
+1. 请求成功
+2. 登录超时
+0. 一般错误

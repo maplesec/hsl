@@ -12,23 +12,23 @@ class User extends BaseComponent{
         this.addUser = this.addUser.bind(this);
     }
 
-    // TODO 查重接口
-
-    async getUser(req,res,next){
-        const userList = await UserModel.find();
-        res.send(userList);
-    }
-
-    async getUserPage(req, res, next) {
-        // 页码, 每页数量, 筛选值, 正序倒序
+    /**
+     * 分页获取用户列表
+     * 如果page和pageSize信息不全,默认返回所有
+     * @param req
+     * @param res
+     * @param next
+     * @returns {Promise.<void>}
+     */
+    async getUsers(req, res, next) {
         const {page, pageSize, filter = '', sort = 'desc', sortBy = ''} = req.query;
         let sortObj = {'id': -1}
         try {
-            if(page && pageSize){
+            if (page && pageSize) {
                 if (typeof(Number(page)) !== 'number' || !(/^[1-9]\d*$/.test(page))) {
-                    throw new Error('page参数错误')
+                    throw new Error('page must be number')
                 } else if (!Number(pageSize)) {
-                    throw new Error('pageSize参数错误')
+                    throw new Error('pageSize must be number')
                 }
             }
             if (sortBy) {
@@ -48,17 +48,20 @@ class User extends BaseComponent{
             let action;
             let actionCount;
             if (filter) {
+                // 多字段模糊查询
                 action = UserModel.find({$or: [{name: eval('/' + filter + '/gi')}, {account: eval('/' + filter + '/gi')}]});
                 actionCount = UserModel.find({$or: [{name: eval('/' + filter + '/gi')}, {account: eval('/' + filter + '/gi')}]}).count();
-            }
-            else{
+            } else {
                 action = UserModel.find();
                 actionCount = UserModel.find().count();
             }
-            if(page && pageSize){
+            if (page && pageSize){
+                // 分页与排序
                 action = action.limit(Number(pageSize)).skip(Number(offset)).sort(sortObj);
+            } else {
+                action = action.sort(sortObj);
             }
-            const totalCount = await actionCount.count();
+            const totalCount = await actionCount;
             const result = await action;
             res.send({
                 status: 1,
@@ -69,6 +72,7 @@ class User extends BaseComponent{
                 }
             })
         } catch (err) {
+            console.log('getUsers', err.message)
             res.send({
                 status: 0,
                 type: 'ERROR_DB',
@@ -77,28 +81,42 @@ class User extends BaseComponent{
         }
     }
 
+    /**
+     * 增加用户, 并指定角色
+     * @param req
+     * @param res
+     * @param next
+     * @returns {Promise.<void>}
+     */
     async addUser(req, res, next){
         const form = new formidable.IncomingForm();
+        function _f(user_id, roles_to_add){
+            return new Promise(function(resolve,reject){
+                global.acl.addUserRoles(user_id, roles_to_add, function(err){
+                    resolve(err);
+                })
+            })
+        }
         form.parse(req, async (err, fields, files) => {
-            const {account, name, password} = fields;
-            try{
-                if(!account){
-                    throw new Error('地址信息错误');
-                }else if(!name){
-                    throw new Error('用户姓名错误');
-                }else if(!password){
-                    throw new Error('用户密码错误');
+            const {account, name, password, roles} = fields;
+            try {
+                if (!account) {
+                    throw new Error('account is required');
+                } else if (!name) {
+                    throw new Error('name is required');
+                } else if (!password) {
+                    throw new Error('password is required');
                 }
-            }catch(err){
+            }catch (err) {
                 console.log(err.message);
                 res.send({
                     status: 0,
-                    type: 'GET_WRONG_PARAM',
+                    type: 'ERROR_PARAMS',
                     message: err.message
                 })
                 return
             }
-            try{
+            try {
                 const user_id = await this.getId('user_id');
                 const newUser = {
                     id: user_id,
@@ -106,41 +124,54 @@ class User extends BaseComponent{
                     name,
                     password
                 }
-                await UserModel.create(newUser);
+                const user = await UserModel.create(newUser);
+                if (roles) {
+                    // 指定用户角色
+                    await _f(user_id, roles);
+                }
                 res.send({
                     status: 1,
-                    success: '添加地址成功'
+                    type: 'SUCCESS'
                 })
-            }catch(err){
-                console.log('添加地址失败', err);
+            }catch (err) {
+                console.log('addUser', err.message);
                 res.send({
                     status: 0,
-                    type: 'ERROR_ADD_USER',
-                    message: '添加地址失败'
+                    type: 'ERROR_DB',
+                    message: err.message
                 })
             }
         })
     }
-    async deleteUser(req, res, next){
+
+    /**
+     * 删除用户,并移除角色对应关系
+     * @param req
+     * @param res
+     * @param next
+     * @returns {Promise.<void>}
+     */
+    async deleteUser (req, res, next) {
         const {user_id} = req.params;
-        function _f1(user_id){
-            return new Promise(function(resolve,reject){
-                global.acl.userRoles(user_id, function(err, roles){
+        function _f1 (user_id) {
+            return new Promise (function(resolve,reject) {
+                global.acl.userRoles(user_id, function (err, roles) {
                     resolve(roles);
                 })
             })
         }
-        function _f2(user_id, roles){
-            return new Promise(function(resolve,reject){
-                global.acl.removeUserRoles(user_id, roles, function(err){
+        function _f2 (user_id, roles) {
+            return new Promise(function (resolve,reject) {
+                global.acl.removeUserRoles(user_id, roles, function (err) {
                     resolve(err);
                 })
             })
         }
-        if(!user_id || !Number(user_id)){
+        if (!user_id || !Number(user_id)) {
             res.send({
+                status: 0,
                 type: 'ERROR_PARAMS',
-                message: '参数错误',
+                message: 'invalid user_id',
             })
             return;
         }
@@ -150,17 +181,26 @@ class User extends BaseComponent{
             await _f2(user_id, roles);
             res.send({
                 status: 1,
-                success: '删除地址成功'
+                type: 'SUCCESS'
             })
-        }catch (err){
-            console.log('删除地址失败', err);
+        }catch (err) {
+            console.log('deleteUser', err.message);
             res.send({
-                type: 'ERROR_DELETE_USER',
-                message: '删除地址失败'
+                status: 0,
+                type: 'ERROR_DB',
+                message: err.message
             })
         }
     }
-    async getAddUserById(req, res, next){
+
+    /**
+     * 获取单个用户, 及对应角色和资源的权限
+     * @param req
+     * @param res
+     * @param next
+     * @returns {Promise.<void>}
+     */
+    async getUserById(req, res, next){
         const user_id = req.params.user_id;
         function _f1(user_id, resources){
             return new Promise(function(resolve,reject){
@@ -178,8 +218,9 @@ class User extends BaseComponent{
         }
         if(!user_id || !Number(user_id)){
             res.send({
+                status: 0,
                 type: 'ERROR_PARAMS',
-                message: '参数错误'
+                message: 'invalid user_id'
             })
             return
         }
@@ -194,62 +235,183 @@ class User extends BaseComponent{
             const user_obj = await UserModel.findOne({id: user_id});
             const {id, name, account} = user_obj;
             const mix = { id, name, account, permissions, roles };
-            res.send(mix);
-        }catch(err){
-            console.log('获取地址信息失败', err);
             res.send({
-                type: 'ERROR_GET_USER',
-                message: '获取地址信息失败'
+                status: 1,
+                type: 'SUCCESS',
+                response: mix
+            });
+        }catch(err){
+            console.log('getUserById', err.message);
+            res.send({
+                status: 0,
+                type: 'ERROR_DB',
+                message: err.message
             })
         }
     }
+
+    /**
+     * 更新用户
+     * @param req
+     * @param res
+     * @param next
+     * @returns {Promise.<void>}
+     */
     async updateUser(req, res, next){
         const user_id = req.params.user_id;
         const form = new formidable.IncomingForm();
+        function _f1(user_id){
+            return new Promise(function(resolve,reject){
+                global.acl.userRoles(user_id, function(err, old_roles){
+                    resolve(old_roles);
+                })
+            })
+        }
+        function _f2(user_id, roles_to_remove){
+            return new Promise(function(resolve,reject){
+                global.acl.removeUserRoles(user_id, roles_to_remove, function(err){
+                    resolve(err);
+                })
+            })
+        }
+        function _f3(user_id, roles_to_add){
+            return new Promise(function(resolve,reject){
+                global.acl.addUserRoles(user_id, roles_to_add, function(err){
+                    resolve(err);
+                })
+            })
+        }
         form.parse(req, async(err, fields, files) => {
-            const {account, name, password} = fields;
+            const {name, password, roles} = fields;
             try{
                 if(!user_id || !Number(user_id)){
-                    throw new Error('参数错误')
-                }
-                if(!account){
-                    throw new Error('地址信息错误');
-                }else if(!name){
-                    throw new Error('用户姓名错误');
-                }else if(!password){
-                    throw new Error('用户密码错误');
+                    throw new Error('invalid user_id')
                 }
             }catch(err){
-                console.log(err.message);
                 res.send({
                     status: 0,
-                    type: 'GET_WRONG_PARAM',
+                    type: 'ERROR_PARAMS',
                     message: err.message
                 })
                 return
             }
             try{
-                const newUser = {
-                    id: user_id,
-                    account,
-                    name,
-                    password
+                let newUser = {};
+                if (name) {
+                    newUser['name'] = name;
+                }
+                if (password) {
+                    newUser['password'] = password;
                 }
                 await UserModel.update({id: user_id}, newUser)
+                if (roles) {
+                    const _now = await _f1(user_id);
+                    await _f2(user_id, _now);
+                    await _f3(user_id, roles);
+                }
                 res.send({
                     status: 1,
-                    success: '编辑地址成功'
+                    type: 'SUCCESS'
                 })
             }catch(err){
-                console.log('编辑地址失败', err);
+                console.log('updateUser', err.message);
                 res.send({
                     status: 0,
-                    type: 'ERROR_UPDATE_USER',
-                    message: '编辑地址失败'
+                    type: 'ERROR_DB',
+                    message: err.message
                 })
             }
         })
     }
+
+    /**
+     * 检查重名
+     * @param req
+     * @param res
+     * @param next
+     * @returns {Promise.<void>}
+     */
+    async isUserNameAvailable (req, res, next) {
+        const name = req.params.name;
+        try {
+            const user = await UserModel.find({name: name});
+            res.send({
+                status: 1,
+                type: 'SUCCESS',
+                response: {
+                    available: user.length === 0
+                }
+            })
+        } catch (err) {
+            console.log('isUserNameAvailable', err.message);
+            res.send({
+                status: 0,
+                type: 'ERROR_DB',
+                message: err.message
+            })
+        }
+    }
+
+    // TODO:个人改密接口
+    /**
+     * 个人改密
+     * @param req
+     * @param res
+     * @param next
+     * @returns {Promise.<void>}
+     */
+    async updateSelfPassword(req, res, next) {
+        const user_id = req.session.user_id;
+        const form = new formidable.IncomingForm();
+        form.parse(req, async(err, fields, files) => {
+            const {oldPassword, newPassword} = fields;
+            try {
+                if(!user_id || !Number(user_id)){
+                    throw new Error('invalid user_id')
+                }
+                if(!oldPassword || !newPassword){
+                    throw new Error('invalid password')
+                }
+            } catch (err) {
+                res.send({
+                    status: 0,
+                    type: 'ERROR_PARAMS',
+                    message: err.message
+                })
+                return
+            }
+            try {
+                const user = await UserModel.find({id: user_id, password: oldPassword})
+                if (user.length > 0){
+                    const newUser = {
+                        password: newPassword
+                    }
+                    await UserModel.update({id: user_id}, newUser)
+                    res.send({
+                        status: 1,
+                        type: 'SUCCESS',
+                    })
+                }else{
+                    res.send({
+                        status: 0,
+                        type: 'WRONG_PASSWORD',
+                        message: 'incorrect password'
+                    })
+                }
+            } catch (err) {
+                console.log('updateSelfPassword', err.message);
+                res.send({
+                    status: 0,
+                    type: 'ERROR_DB',
+                    message: err.message
+                })
+            }
+        })
+    }
+
+
+
+    // 已停用, 被其他函数代替
     async addUserRoles(){
         const user_id = req.params.user_id;
         const form = new formidable.IncomingForm();
@@ -296,6 +458,7 @@ class User extends BaseComponent{
         })
     }
 
+    // 已停用, 被其他函数代替
     async removeUserRoles(){
         const user_id = req.params.user_id;
         const form = new formidable.IncomingForm();
@@ -342,6 +505,7 @@ class User extends BaseComponent{
         })
     }
 
+    // 已停用, 被其他函数代替
     async getUserRoles(req, res, next){
         const user_id = req.params.user_id;
         function _f(user_id){
@@ -377,6 +541,7 @@ class User extends BaseComponent{
         }
     }
 
+    // 已停用, 被其他函数代替
     async setUserRoles(req, res, next){
         const user_id = req.params.user_id;
         const form = new formidable.IncomingForm();

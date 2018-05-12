@@ -317,7 +317,7 @@ class Role extends BaseComponent{
             })
         }
         form.parse(req, async(err, fields, files) => {
-            const {new_resources} = fields;
+            const {resources} = fields;
             let {permissions} = fields;
             try{
                 if(!resources){
@@ -338,13 +338,13 @@ class Role extends BaseComponent{
 
 
             try{
-                const old_resource_list = await _f(resources, permissions);
+                const old_resource_list = await RoleModel.find();
                 let old_resources = [];
                 old_resource_list.forEach(function(item){
                     old_resources.push(item.id);
                 })
                 await _f1(old_resources, permissions);
-                await _f2(new_resources, permissions)
+                await _f2(resources, permissions)
                 res.send({
                     status: 1,
                     success: '角色赋权成功'
@@ -354,13 +354,10 @@ class Role extends BaseComponent{
                 res.send({
                     status: 0,
                     type: 'GET_WRONG_PARAM',
-                    message: '角色赋权失败'
+                    message: err.message
                 })
             }
         })
-
-
-
     }
 }
 export default new Role()

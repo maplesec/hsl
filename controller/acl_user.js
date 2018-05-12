@@ -22,7 +22,7 @@ class User extends BaseComponent{
     async getUserPage(req, res, next) {
         // 页码, 每页数量, 筛选值, 正序倒序
         const {page, pageSize, filter = '', sort = 'desc', sortBy = ''} = req.query;
-        let sortObj = {'_id': -1}
+        let sortObj = {'id': -1}
         try {
             if(page && pageSize){
                 if (typeof(Number(page)) !== 'number' || !(/^[1-9]\d*$/.test(page))) {

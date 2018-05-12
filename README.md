@@ -59,3 +59,6 @@ status:
 1. 请求成功
 2. 登录超时
 0. 一般错误
+
+
+ 直接使用name作为/resource 的id

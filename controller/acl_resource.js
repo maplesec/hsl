@@ -10,85 +10,174 @@ class Resource extends BaseComponent{
         this.addResource = this.addResource.bind(this);
     }
 
-    async getResource(req,res,next){
-        const resourceList = await ResourceModel.find();
-        res.send(resourceList);
+    /**
+     * 分页获取资源列表
+     * @param req
+     * @param res
+     * @param next
+     * @returns {Promise.<void>}
+     */
+    async getResource(req, res, next){
+        const {page, pageSize, filter = '', sort = 'desc', sortBy = ''} = req.query;
+        let sortObj = {'id': -1}
+        try {
+            if (page && pageSize) {
+                if (typeof(Number(page)) !== 'number' || !(/^[1-9]\d*$/.test(page))) {
+                    throw new Error('page must be number')
+                } else if (!Number(pageSize)) {
+                    throw new Error('pageSize must be number')
+                }
+            }
+            if (sortBy) {
+                sortObj = {};
+                sortObj[sortBy] = sort === 'asc' ? 1 : -1;
+            }
+        } catch (err) {
+            res.send({
+                status: 0,
+                type: 'ERROR_PARAMS',
+                message: err.message
+            })
+            return
+        }
+        try {
+            const offset = (page - 1) * pageSize;
+            let action;
+            let actionCount;
+            if (filter) {
+                // 多字段模糊查询
+                action = ResourceModel.find({$or: [{id: eval('/' + filter + '/gi')}]});
+                actionCount = ResourceModel.find({$or: [{id: eval('/' + filter + '/gi')}]}).count();
+            } else {
+                action = ResourceModel.find();
+                actionCount = ResourceModel.find().count();
+            }
+            if (page && pageSize){
+                // 分页与排序
+                action = action.limit(Number(pageSize)).skip(Number(offset)).sort(sortObj);
+            } else {
+                action = action.sort(sortObj);
+            }
+            const totalCount = await actionCount;
+            const result = await action;
+            res.send({
+                status: 1,
+                type: 'SUCCESS',
+                response: {
+                    totalCount,
+                    result
+                }
+            })
+        } catch (err) {
+            console.log('getResource', err.message)
+            res.send({
+                status: 0,
+                type: 'ERROR_DB',
+                message: err.message
+            })
+        }
     }
+
+    /**
+     * 增加资源
+     * 资源的键由用户指定,先校验重复,再增加
+     * @param req
+     * @param res
+     * @param next
+     * @returns {Promise.<void>}
+     */
     async addResource(req, res, next){
         const form = new formidable.IncomingForm();
         form.parse(req, async (err, fields, files) => {
-            const {pId, name} = fields;
+            const {id, name} = fields;
             try{
-                if(!pId){
-                    throw new Error('pid信息错误');
+                if(!id){
+                    throw new Error('id is required');
                 }else if(!name){
-                    throw new Error('name错误');
+                    throw new Error('name is required');
                 }
             }catch(err){
-                console.log(err.message);
                 res.send({
                     status: 0,
-                    type: 'GET_WRONG_PARAM',
+                    type: 'ERROR_PARAMS',
                     message: err.message
                 })
                 return
             }
             try{
-                const resource_id = await this.getId('resource_id');
-                const newResource = {
-                    id: resource_id,
-                    pId,
-                    name
+                const existResource = await ResourceModel.find({id: id});
+                if (existResource.length > 0){
+                    res.send({
+                        status: 0,
+                        type: 'RESOURCE_EXISTED',
+                        message: 'resource is existed'
+                    })
+                } else {
+                    const newResource = {
+                        id: id,
+                        name
+                    }
+                    await ResourceModel.create(newResource);
+                    res.send({
+                        status: 1,
+                        success: 'SUCCESS'
+                    })
                 }
-                await ResourceModel.create(newResource);
-                res.send({
-                    status: 1,
-                    success: '添加地址成功'
-                })
-            }catch(err){
-                console.log('添加地址失败', err);
+            } catch(err) {
+                console.log('addResource', err.message);
                 res.send({
                     status: 0,
-                    type: 'ERROR_ADD_RESOURCE',
-                    message: '添加地址失败'
+                    type: 'ERROR_DB',
+                    message: err.message
                 })
             }
         })
     }
+
+    /**
+     * 删除资源, 并删除对应关系
+     * @param req
+     * @param res
+     * @param next
+     * @returns {Promise.<void>}
+     */
     async deleteResource(req, res, next){
-        const {resource_id} = req.params;
-        function _f(resource_id){
+        const {id} = req.params;
+        function _f(id){
             return new Promise(function(resolve,reject){
-                global.acl.removeResource(resource_id, function(err){
+                global.acl.removeResource(id, function(err){
                     resolve(err);
                 })
             })
         }
-        if(!resource_id || !Number(resource_id)){
+        if(!id){
             res.send({
+                status: 0,
                 type: 'ERROR_PARAMS',
-                message: '参数错误',
+                message: 'invalid resource_id',
             })
             return;
         }
         try{
-            await ResourceModel.findOneAndRemove({id: resource_id});
-            await _f(resource_id);
+            await ResourceModel.findOneAndRemove({id: id});
+            await _f(id);
             res.send({
                 status: 1,
-                success: '删除地址成功'
+                success: 'SUCCESS'
             })
         }catch (err){
-            console.log('删除地址失败', err);
+            console.log('deleteResource', err.message);
             res.send({
-                type: 'ERROR_DELETE_RESOURCE',
-                message: '删除地址失败'
+                type: 'ERROR_DB',
+                message: err.message
             })
         }
     }
-    async getAddResourceById(req, res, next){
-        const resource_id = req.params.resource_id;
-        if(!resource_id || !Number(resource_id)){
+
+    // TODO: 增加对应的角色信息
+    async getResourceById(req, res, next){
+        const {id} = req.params;
+        if(!id){
             res.send({
                 type: 'ERROR_PARAMS',
                 message: '参数错误'
@@ -96,8 +185,12 @@ class Resource extends BaseComponent{
             return
         }
         try{
-            const resource = await ResourceModel.findOne({id: resource_id});
-            res.send(resource);
+            const resource = await ResourceModel.findOne({id: id});
+            res.send({
+                status: 1,
+                type: 'SUCCESS',
+                response: resource
+            });
         }catch(err){
             console.log('获取地址信息失败', err);
             res.send({
@@ -106,46 +199,48 @@ class Resource extends BaseComponent{
             })
         }
     }
+
+    /**
+     * 修改资源信息
+     * @param req
+     * @param res
+     * @param next
+     * @returns {Promise.<void>}
+     */
     async updateResource(req, res, next){
-        const resource_id = req.params.resource_id;
+        const {id} = req.params;
         const form = new formidable.IncomingForm();
         form.parse(req, async(err, fields, files) => {
-            const {pId, name} = fields;
+            const {name} = fields;
             try{
-                if(!resource_id || !Number(resource_id)){
-                    throw new Error('参数错误')
+                if(!id){
+                    throw new Error('invalid resource_id')
                 }
-                if(!pId){
-                    throw new Error('地址信息错误');
-                }else if(!name){
-                    throw new Error('用户姓名错误');
+                if(!name){
+                    throw new Error('invalid name');
                 }
             }catch(err){
-                console.log(err.message);
                 res.send({
                     status: 0,
-                    type: 'GET_WRONG_PARAM',
+                    type: 'ERROR_PARAMS',
                     message: err.message
                 })
-                return
             }
             try{
                 const newResource = {
-                    id: resource_id,
-                    pId,
                     name
                 }
-                await ResourceModel.update({id: resource_id}, newResource)
+                await ResourceModel.update({id: id}, newResource)
                 res.send({
                     status: 1,
-                    success: '编辑地址成功'
+                    success: 'SUCCESS'
                 })
             }catch(err){
-                console.log('编辑地址失败', err);
+                console.log('updateResource', err.message);
                 res.send({
                     status: 0,
-                    type: 'ERROR_UPDATE_RESOURCE',
-                    message: '编辑地址失败'
+                    type: 'ERROR_DB',
+                    message: err.message
                 })
             }
         })

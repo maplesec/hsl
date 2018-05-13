@@ -108,7 +108,6 @@ class User extends BaseComponent{
                     throw new Error('password is required');
                 }
             }catch (err) {
-                console.log(err.message);
                 res.send({
                     status: 0,
                     type: 'ERROR_PARAMS',
@@ -293,7 +292,6 @@ class User extends BaseComponent{
                     type: 'ERROR_PARAMS',
                     message: err.message
                 })
-                return
             }
             try{
                 let newUser = {};

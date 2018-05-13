@@ -5,9 +5,8 @@ import mongoose from 'mongoose'
 const Schema = mongoose.Schema;
 
 const resourceSchema =  new Schema({
-    id: Number,
-    name: String,
-    pId: String
+    id: String,
+    name: String
 })
 
 resourceSchema.index({id: 1});

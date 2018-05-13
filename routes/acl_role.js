@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.get('/', Role.getRole);
 router.post('/', Role.addRole);
-router.get('/:role_id', Role.getAddRoleById);
+router.get('/:role_id', Role.getRoleById);
 router.delete('/:role_id', Role.deleteRole);
 router.put('/:role_id', Role.updateRole);
 router.post('/:role_id/allow', Role.setAllow);

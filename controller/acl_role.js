@@ -11,23 +11,104 @@ class Role extends BaseComponent{
         this.addRole = this.addRole.bind(this);
     }
 
+    /**
+     * 分页获取角色
+     * @param req
+     * @param res
+     * @param next
+     * @returns {Promise.<void>}
+     */
     async getRole(req,res,next){
-        const roleList = await RoleModel.find();
-        res.send(roleList);
+        const {page, pageSize, filter = '', sort = 'desc', sortBy = ''} = req.query;
+        let sortObj = {'id': -1}
+        try {
+            if (page && pageSize) {
+                if (typeof(Number(page)) !== 'number' || !(/^[1-9]\d*$/.test(page))) {
+                    throw new Error('page must be number')
+                } else if (!Number(pageSize)) {
+                    throw new Error('pageSize must be number')
+                }
+            }
+            if (sortBy) {
+                sortObj = {};
+                sortObj[sortBy] = sort === 'asc' ? 1 : -1;
+            }
+        } catch (err) {
+            res.send({
+                status: 0,
+                type: 'ERROR_PARAMS',
+                message: err.message
+            })
+            return
+        }
+        try {
+            const offset = (page - 1) * pageSize;
+            let action;
+            let actionCount;
+            if (filter) {
+                // 多字段模糊查询
+                action = RoleModel.find({$or: [{name: eval('/' + filter + '/gi')}]});
+                actionCount = RoleModel.find({$or: [{name: eval('/' + filter + '/gi')}]}).count();
+            } else {
+                action = RoleModel.find();
+                actionCount = RoleModel.find().count();
+            }
+            if (page && pageSize){
+                // 分页与排序
+                action = action.limit(Number(pageSize)).skip(Number(offset)).sort(sortObj);
+            } else {
+                action = action.sort(sortObj);
+            }
+            const totalCount = await actionCount;
+            const result = await action;
+            res.send({
+                status: 1,
+                type: 'SUCCESS',
+                response: {
+                    totalCount,
+                    result
+                }
+            })
+        } catch (err) {
+            console.log('getRole', err.message)
+            res.send({
+                status: 0,
+                type: 'ERROR_DB',
+                message: err.message
+            })
+        }
     }
+
+    /**
+     * 新增角色
+     * @param req
+     * @param res
+     * @param next
+     * @returns {Promise.<void>}
+     */
     async addRole(req, res, next){
         const form = new formidable.IncomingForm();
+        const _f = function(role_id, resources, permissions){
+            return new Promise(function(resolve, reject){
+                global.acl.allow(role_id, resources, permissions, function(err){
+                    resolve(err);
+                })
+            })
+        }
         form.parse(req, async (err, fields, files) => {
-            const {name} = fields;
+            const {name, resources} = fields;
+            let {permissions} = fields;
             try{
                 if(!name){
-                    throw new Error('name错误');
+                    throw new Error('name is required');
+                }
+                if(!permissions){
+                    permissions = '*';
                 }
             }catch(err){
-                console.log(err.message);
                 res.send({
                     status: 0,
-                    type: 'GET_WRONG_PARAM',
+                    type: 'ERROR_PARAMS',
                     message: err.message
                 })
                 return
@@ -39,20 +120,31 @@ class Role extends BaseComponent{
                     name
                 }
                 await RoleModel.create(newRole);
+                if (resources) {
+                    await _f(role_id, resources, permissions);
+                }
                 res.send({
                     status: 1,
-                    success: '添加成功'
+                    success: 'SUCCESS'
                 })
             }catch(err){
-                console.log('添加地址失败', err);
+                console.log('addRole', err.message);
                 res.send({
                     status: 0,
-                    type: 'ERROR_ADD_Role',
-                    message: '添加失败'
+                    type: 'ERROR_DB',
+                    message: err.message
                 })
             }
         })
     }
+
+    /**
+     * 删除角色
+     * @param req
+     * @param res
+     * @param next
+     * @returns {Promise.<void>}
+     */
     async deleteRole(req, res, next){
         const {role_id} = req.params;
         function _f1(role_id, resources){
@@ -71,8 +163,9 @@ class Role extends BaseComponent{
         }
         if(!role_id || !Number(role_id)){
             res.send({
+                status: 0,
                 type: 'ERROR_PARAMS',
-                message: '参数错误',
+                message: 'invalid role_id',
             })
             return;
         }
@@ -87,89 +180,134 @@ class Role extends BaseComponent{
             await _f2(role_id);
             res.send({
                 status: 1,
-                success: '删除成功'
+                success: 'SUCCESS'
             })
         }catch (err){
-            console.log('删除地址失败', err);
+            console.log('deleteRole', err);
             res.send({
-                type: 'ERROR_DELETE_ROLE',
-                message: '删除失败'
+                status: 0,
+                type: 'ERROR_DB',
+                message: err.message
             })
         }
     }
-    async getAddRoleById(req, res, next){
+
+    /**
+     * 获取单个角色, 及对应资源信息
+     * @param req
+     * @param res
+     * @param next
+     * @returns {Promise.<void>}
+     */
+    async getRoleById(req, res, next){
         const role_id = req.params.role_id;
         function _f(){
             return new Promise(function(resolve,reject){
                 global.acl.whatResources(role_id, function(err, resources){
-                    console.log("getAddRoleById:",err)
                     resolve(resources);
                 })
             })
         }
         if(!role_id || !Number(role_id)){
             res.send({
+                status: 0,
                 type: 'ERROR_PARAMS',
-                message: '参数错误'
+                message: 'invalid role_id'
             })
             return
         }
         try{
             let role = await RoleModel.findOne({id: role_id});
-            console.log("received req getAddRoleById")
             const resources =  await _f();
-            console.log("resources:", resources)
-             res.send(role);
-        }catch(err){
-            console.log('获取地址信息失败', err);
+            const {id, name} = role;
+            const mix = {id, name, resources};
             res.send({
-                type: 'ERROR_GET_ROLE',
-                message: '获取地址信息失败'
+                status: 1,
+                type: 'SUCCESS',
+                response: mix
+            });
+        }catch(err){
+            console.log('getRoleById', err.message);
+            res.send({
+                status: 0,
+                type: 'ERROR_DB',
+                message: err.message
             })
         }
     }
+
+    /**
+     * 更新角色
+     * @param req
+     * @param res
+     * @param next
+     * @returns {Promise.<void>}
+     */
     async updateRole(req, res, next){
         const role_id = req.params.role_id;
         const form = new formidable.IncomingForm();
+        const _f1 = function(resources, permissions){
+            return new Promise(function(resolve, reject){
+                global.acl.removeAllow(role_id, resources, permissions, function(err){
+                    resolve(err);
+                })
+            })
+        }
+        const _f2 = function(resources, permissions){
+            return new Promise(function(resolve, reject){
+                global.acl.allow(role_id, resources, permissions, function(err){
+                    resolve(err);
+                })
+            })
+        }
         form.parse(req, async(err, fields, files) => {
-            const {name} = fields;
+            const {name, resources} = fields;
+            let {permissions} = fields;
             try{
                 if(!role_id || !Number(role_id)){
-                    throw new Error('参数错误')
+                    throw new Error('role_id is invalid')
                 }
-                if(!name){
-                    throw new Error('用户姓名错误');
+                if(!permissions){
+                    permissions = '*';
                 }
             }catch(err){
-                console.log(err.message);
                 res.send({
                     status: 0,
-                    type: 'GET_WRONG_PARAM',
+                    type: 'ERROR_PARAMS',
                     message: err.message
                 })
-                return
             }
             try{
-                const newRole = {
-                    id: role_id,
-                    name
+                let newRole = {}
+                if (name) {
+                    newRole['name'] = name;
                 }
                 await RoleModel.update({id: role_id}, newRole)
+                if (resources) {
+                    const old_resource_list = await RoleModel.find();
+                    let old_resources = [];
+                    old_resource_list.forEach(function(item){
+                        old_resources.push(item.id);
+                    })
+                    await _f1(old_resources, permissions);
+                    await _f2(resources, permissions)
+                }
                 res.send({
                     status: 1,
-                    success: '编辑地址成功'
+                    success: 'SUCCESS'
                 })
             }catch(err){
-                console.log('编辑地址失败', err);
+                console.log('updateRole', err.message);
                 res.send({
                     status: 0,
-                    type: 'ERROR_UPDATE_ROLE',
-                    message: '编辑地址失败'
+                    type: 'ERROR_DB',
+                    message: err.message
                 })
             }
         })
     }
 
+    // 待定
     async getRoleUsers(req, res, next){
         const role_id = req.params.role_id;
         function _f(role_id){
@@ -205,6 +343,7 @@ class Role extends BaseComponent{
         }
     }
 
+    // 已停用, 被其他函数代替
     async allow(req, res, next){
         const role_id = req.params.role_id;
         const form = new formidable.IncomingForm();
@@ -252,6 +391,7 @@ class Role extends BaseComponent{
         })
     }
 
+    // 已停用, 被其他函数代替
     async removeAllow(req, res, next){
         const role_id = req.params.role_id;
         const form = new formidable.IncomingForm();
@@ -299,6 +439,7 @@ class Role extends BaseComponent{
         })
     }
 
+    // 已停用, 被其他函数代替
     async setAllow(req, res, next) {
         const role_id = req.params.role_id;
         const form = new formidable.IncomingForm();
@@ -335,8 +476,6 @@ class Role extends BaseComponent{
                 })
                 return
             }
-
-
             try{
                 const old_resource_list = await RoleModel.find();
                 let old_resources = [];

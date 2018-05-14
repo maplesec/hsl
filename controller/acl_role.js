@@ -88,22 +88,33 @@ class Role extends BaseComponent{
      */
     async addRole(req, res, next){
         const form = new formidable.IncomingForm();
-        const _f = function(role_id, resources, permissions){
+        const _f = function(roleObjs){
             return new Promise(function(resolve, reject){
-                global.acl.allow(role_id, resources, permissions, function(err){
+                global.acl.allow(roleObjs, function(err){
                     resolve(err);
                 })
             })
         }
         form.parse(req, async (err, fields, files) => {
-            const {name, resources} = fields;
-            let {permissions} = fields;
+            const {name, allows} = fields;
             try{
                 if(!name){
                     throw new Error('name is required');
                 }
-                if(!permissions){
-                    permissions = '*';
+                if(allows){
+                    //校验是否符合规范
+                    if (typeof(allows) !== 'object') {
+                        throw new Error('allows is not object')
+                    } else {
+                        allows.forEach(function(allow){
+                            if(!allow.resources){
+                                throw new Error('resources is invalid')
+                            }
+                            if(!allow.permissions){
+                                throw new Error('permissions is invalid')
+                            }
+                        })
+                    }
                 }
             }catch(err){
                 res.send({
@@ -111,7 +122,6 @@ class Role extends BaseComponent{
                     type: 'ERROR_PARAMS',
                     message: err.message
                 })
-                return
             }
             try{
                 const role_id = await this.getId('role_id');
@@ -120,8 +130,11 @@ class Role extends BaseComponent{
                     name
                 }
                 await RoleModel.create(newRole);
-                if (resources) {
-                    await _f(role_id, resources, permissions);
+                if (allows) {
+                    await _f([{
+                        roles: [role_id.toString()],
+                        allows
+                    }])
                 }
                 res.send({
                     status: 1,
@@ -218,9 +231,9 @@ class Role extends BaseComponent{
         }
         try{
             let role = await RoleModel.findOne({id: role_id});
-            const resources =  await _f();
+            const allows =  await _f();
             const {id, name} = role;
-            const mix = {id, name, resources};
+            const mix = {id, name, allows};
             res.send({
                 status: 1,
                 type: 'SUCCESS',
@@ -253,22 +266,33 @@ class Role extends BaseComponent{
                 })
             })
         }
-        const _f2 = function(resources, permissions){
+        const _f2 = function(roleObjs){
             return new Promise(function(resolve, reject){
-                global.acl.allow(role_id, resources, permissions, function(err){
+                global.acl.allow(roleObjs, function(err){
                     resolve(err);
                 })
             })
         }
         form.parse(req, async(err, fields, files) => {
-            const {name, resources} = fields;
-            let {permissions} = fields;
+            const {name, allows} = fields;
             try{
                 if(!role_id || !Number(role_id)){
                     throw new Error('role_id is invalid')
                 }
-                if(!permissions){
-                    permissions = '*';
+                if(allows){
+                    //校验是否符合规范
+                    if (typeof(allows) !== 'object') {
+                        throw new Error('allows is not object')
+                    } else {
+                        allows.forEach(function(allow){
+                            if(!allow.resources){
+                                throw new Error('resources is invalid')
+                            }
+                            if(!allow.permissions){
+                                throw new Error('permissions is invalid')
+                            }
+                        })
+                    }
                 }
             }catch(err){
                 res.send({
@@ -283,14 +307,17 @@ class Role extends BaseComponent{
                     newRole['name'] = name;
                 }
                 await RoleModel.update({id: role_id}, newRole)
-                if (resources) {
+                if (allows) {
                     const old_resource_list = await RoleModel.find();
                     let old_resources = [];
                     old_resource_list.forEach(function(item){
                         old_resources.push(item.id);
                     })
-                    await _f1(old_resources, permissions);
-                    await _f2(resources, permissions)
+                    await _f1(old_resources, ['show', 'operate']);
+                    await _f2([{
+                        roles: [role_id],
+                        allows
+                    }])
                 }
                 res.send({
                     status: 1,

@@ -1,8 +1,8 @@
-function authorize (permissions) {
+function authorize (resource, permission) {
     return function (req, res, next){
         // TODO: 增加接口权限校验
-        console.log('check:' + permissions)
-        if (!req.session.user_id && false) {
+        console.log('check:' + permission)
+        if (!req.session.user_id) {
             res.send({
                 status: 2,
                 type: 'ERROR_SESSION',
@@ -10,10 +10,22 @@ function authorize (permissions) {
             })
         } else {
             const user_id = req.session.user_id;
-            global.acl.isAllowed(user_id, '3', 'test1', function(err, res){
-                console.log(err, res);
+            if (resource) {
+                global.acl.isAllowed(user_id, resource, permission, function(err, result){
+                    if (result) {
+                        next()
+                    } else {
+                        res.send({
+                            status: 0,
+                            type: 'ERROR_PERMISSION',
+                            message: '没有权限'
+                        })
+                    }
+                })
+            } else {
                 next()
-            })
+            }
+
         }
     }
 }

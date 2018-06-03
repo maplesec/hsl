@@ -70,3 +70,20 @@ status:
  增加查重接口
  完善接口聚合
  字段长度限制
+
+
+ 参考Monkvo
+ mongoose 跨表查询
+ jwt用户认证
+ blog基本内容
+ apicache高并发
+ 前后端整合
+ 区分admin以及client
+ client不用登陆
+
+
+
+ 代码重构：
+ 1. global.acl 统一封装Promise
+ 2. controller只做函数，不做接口返回。 router做接口返回，以及catch errors
+ 3. web密码加密,写数据库密码再加密

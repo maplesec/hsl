@@ -12,6 +12,145 @@ class User extends BaseComponent{
         this.addUser = this.addUser.bind(this);
     }
 
+    async login(req, res, next) {
+        function _f1(user_id, resources){
+            return new Promise(function(resolve,reject){
+                global.acl.allowedPermissions(user_id, resources, function(err, obj){
+                    resolve(obj);
+                })
+            })
+        }
+        function _f2(user_id){
+            return new Promise(function(resolve, reject){
+                global.acl.userRoles(user_id, function(err, roles){
+                    resolve(roles);
+                })
+            })
+        }
+        const form = new formidable.IncomingForm();
+        form.parse(req, async (err, fields, files) => {
+            const {account, password} = fields;
+            try {
+                if (!account) {
+                    throw new Error('account is required');
+                } else if (!password) {
+                    throw new Error('password is required');
+                }
+            }catch (err) {
+                res.send({
+                    status: 0,
+                    type: 'ERROR_PARAMS',
+                    message: err.message
+                })
+                return
+            }
+            try {
+                const user_obj = await UserModel.findOne({account, password});
+                if (user_obj) {
+                    // 登陆成功
+                    const {id, name, account} = user_obj;
+                    const resourceList = await ResourceModel.find();
+                    let resources = [];
+                    resourceList.forEach(function(item){
+                        resources.push(item.id);
+                    });
+                    const permissions = await _f1(id, resources);
+                    const roles = await _f2(id);
+                    const mix = { id, name, account, permissions, roles };
+                    req.session.user_id = id;
+                    res.send({
+                        status: 1,
+                        type: 'SUCCESS',
+                        response: mix
+                    });
+                }else{
+                    const hasAccount = await UserModel.findOne({account});
+                    if (hasAccount) {
+                        res.send({
+                            status: 0,
+                            type: '',
+                            message: '密码错误'
+                        })
+                    } else {
+                        res.send({
+                            status: 0,
+                            type: '',
+                            message: '账号不存在'
+                        })
+                    }
+                }
+
+
+                if (roles) {
+                    // 指定用户角色
+                    await _f(user_id, roles);
+                }
+                res.send({
+                    status: 1,
+                    type: 'SUCCESS'
+                })
+            }catch (err) {
+                console.log('login', err.message);
+                res.send({
+                    status: 0,
+                    type: 'ERROR_DB',
+                    message: err.message
+                })
+            }
+
+        })
+    }
+
+    async getProfile(req, res, next) {
+        const user_id = req.session.user_id;
+        function _f1(user_id, resources){
+            return new Promise(function(resolve,reject){
+                global.acl.allowedPermissions(user_id, resources, function(err, obj){
+                    resolve(obj);
+                })
+            })
+        }
+        function _f2(user_id){
+            return new Promise(function(resolve, reject){
+                global.acl.userRoles(user_id, function(err, roles){
+                    resolve(roles);
+                })
+            })
+        }
+        if(!user_id || !Number(user_id)){
+            res.send({
+                status: 0,
+                type: 'ERROR_PARAMS',
+                message: 'invalid user_id'
+            })
+            return
+        }
+        try{
+            const resourceList = await ResourceModel.find();
+            let resources = [];
+            resourceList.forEach(function(item){
+                resources.push(item.id);
+            });
+            const permissions = await _f1(user_id, resources);
+            const roles = await _f2(user_id);
+            const user_obj = await UserModel.findOne({id: user_id});
+            const {id, name, account} = user_obj;
+            const mix = { id, name, account, permissions, roles };
+            res.send({
+                status: 1,
+                type: 'SUCCESS',
+                response: mix
+            });
+        }catch(err){
+            console.log('getProfile', err.message);
+            res.send({
+                status: 0,
+                type: 'ERROR_DB',
+                message: err.message
+            })
+        }
+    }
+
     /**
      * 分页获取用户列表
      * 如果page和pageSize信息不全,默认返回所有

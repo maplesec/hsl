@@ -25,6 +25,7 @@ app.post('/login', function(req, res){
 
 app.post('/logout', function(req, res){
     req.session.user_id = null
+    req.session.destroy();
     res.send({
         status: 1
     })

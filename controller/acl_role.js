@@ -308,7 +308,7 @@ class Role extends BaseComponent{
                 }
                 await RoleModel.update({id: role_id}, newRole)
                 if (allows) {
-                    const old_resource_list = await RoleModel.find();
+                    const old_resource_list = await ResourceModel.find();
                     let old_resources = [];
                     old_resource_list.forEach(function(item){
                         old_resources.push(item.id);
@@ -504,7 +504,7 @@ class Role extends BaseComponent{
                 return
             }
             try{
-                const old_resource_list = await RoleModel.find();
+                const old_resource_list = await ResourceModel.find();
                 let old_resources = [];
                 old_resource_list.forEach(function(item){
                     old_resources.push(item.id);

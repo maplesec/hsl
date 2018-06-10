@@ -48,7 +48,8 @@ class User extends BaseComponent{
                 const user_obj = await UserModel.findOne({account, password});
                 if (user_obj) {
                     // 登陆成功
-                    const {id, name, account} = user_obj;
+                    const {name, account} = user_obj;
+                    const id = user_obj.id.toString();
                     const resourceList = await ResourceModel.find();
                     let resources = [];
                     resourceList.forEach(function(item){
@@ -79,16 +80,6 @@ class User extends BaseComponent{
                         })
                     }
                 }
-
-
-                if (roles) {
-                    // 指定用户角色
-                    await _f(user_id, roles);
-                }
-                res.send({
-                    status: 1,
-                    type: 'SUCCESS'
-                })
             }catch (err) {
                 console.log('login', err.message);
                 res.send({

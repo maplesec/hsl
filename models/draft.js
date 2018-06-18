@@ -5,6 +5,7 @@ import mongoose from 'mongoose'
 const Schema = mongoose.Schema;
 
 const draftSchema =  new Schema({
+    id: Number,
     title: String,
     imagesrc: String,
     // tags: [

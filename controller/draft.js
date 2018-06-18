@@ -71,6 +71,33 @@ class Draft extends BaseComponent {
         }
     }
 
+    async getDraftById(req, res, next){
+        const draft_id = req.params.draft_id;
+        if(!draft_id || !Number(draft_id)){
+            res.send({
+                status: 0,
+                type: 'ERROR_PARAMS',
+                message: 'invalid draft_id'
+            })
+            return
+        }
+        try{
+            const draft = await DraftModel.findOne({id: draft_id});
+            res.send({
+                status: 1,
+                type: 'SUCCESS',
+                response: draft
+            });
+        }catch(err){
+            console.log('getDraftById', err.message);
+            res.send({
+                status: 0,
+                type: 'ERROR_DB',
+                message: err.message
+            })
+        }
+    }
+
     async createDraft(req, res, next){
         const form = new formidable.IncomingForm();
         form.parse(req, async (err, fields, files) => {

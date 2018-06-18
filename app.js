@@ -16,13 +16,6 @@ app.use(session({
     }
 }))
 
-app.post('/login', function(req, res){
-    req.session.user_id = '13'
-    res.send({
-        status: 1
-    })
-})
-
 app.post('/logout', function(req, res){
     req.session.user_id = null
     req.session.destroy();

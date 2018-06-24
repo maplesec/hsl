@@ -45,7 +45,8 @@ app.get('/vue', function(req, res){
     //     template: require('fs').readFileSync('./src/index.template.html', 'utf-8')
     // })
     const context = {
-        title: 'test'
+        title: 'test',
+        url: req.url
     }
     renderer.renderToString(context, (err, html) => {
         if (err) {

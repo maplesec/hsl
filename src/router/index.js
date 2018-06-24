@@ -9,6 +9,7 @@ Vue.use(Router)
 
 export function createRouter(){
     const router = new Router({
+        mode: 'history',
         routes: [
             {
                 path: '/login',

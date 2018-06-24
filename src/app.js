@@ -5,7 +5,7 @@ import 'normalize.css/normalize.css'// A modern alternative to CSS resets
 import { createRouter } from './router'
 import axios from './services/axios'
 import prototypeFunc from './utils/prototypeFunc'
-import store from './store'
+import { createStore } from './store'
 import i18n from './lang'
 
 
@@ -157,6 +157,7 @@ Vue.use(prototypeFunc)
 
 export function createApp(){
     const router = createRouter()
+    const store = createStore()
     const app = new Vue({
         render: h => h(App),
         i18n,
@@ -164,5 +165,5 @@ export function createApp(){
         store,
         axios,
     })
-    return { app, router }
+    return { app, router, store }
 }

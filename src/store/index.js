@@ -6,18 +6,18 @@ import user from './modules/user'
 import role from './modules/role'
 
 Vue.use(Vuex)
-
-const store = new Vuex.Store({
-  modules: {
-    app,
-    tagsView,
-    user,
-    role
-  },
-  getters: {
-    visitedViews: state => state.tagsView.visitedViews,
-    cachedViews: state => state.tagsView.cachedViews,
-  }
-})
-
-export default store
+export function createStore () {
+    const store = new Vuex.Store({
+        modules: {
+            app,
+            tagsView,
+            user,
+            role
+        },
+        getters: {
+            visitedViews: state => state.tagsView.visitedViews,
+            cachedViews: state => state.tagsView.cachedViews,
+        }
+    })
+    return store;
+}

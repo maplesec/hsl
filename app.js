@@ -40,7 +40,7 @@ const renderer = createBundleRenderer(bundle, {
   //template: require('fs').readFileSync('./index.html', 'utf-8')
 })
 
-app.get('/vue', function(req, res){
+app.get('*', function(req, res){
     // const renderer = serverRender.createRenderer({
     //     template: require('fs').readFileSync('./src/index.template.html', 'utf-8')
     // })

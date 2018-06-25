@@ -158,6 +158,31 @@ Vue.use(prototypeFunc)
 export function createApp(){
     const router = createRouter()
     const store = createStore()
+
+    router.beforeEach(function(to, from, next) {
+        // TODO: 判断页面是否需要权限,再执行以下代码
+        // 首次打开网页,根据接口判断是否免登陆
+        if(store.getters['app/profile'].needCheckLogin){
+            const profile_api = axios.get('localhost:3000/acl_user/profile');
+            (profile_api).then(res => {
+                console.log(JSON.stringify(res))
+                if (res.data && res.data && res.data.status === 1) {
+                    store.dispatch('app/setProfile', res.data.response);
+                    next();
+                } else {
+                    console.log('next1')
+                    next('/role');
+                }
+            }, err => {
+                console.log('next2')
+                next('/role');
+            })
+            store.dispatch('app/checkLogin')
+        }else{
+            next();
+        }
+    })
+
     const app = new Vue({
         render: h => h(App),
         i18n,

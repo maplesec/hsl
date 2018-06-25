@@ -61,25 +61,5 @@ export function createRouter(){
         ]
     })
 
-    router.beforeEach(function(to, from, next) {
-        // TODO: 判断页面是否需要权限,再执行以下代码
-        // 首次打开网页,根据接口判断是否免登陆
-        if(store.getters['app/profile'].needCheckLogin){
-            const profile_api = axios.get('/acl_user/profile');
-            (profile_api).then(res => {
-                if (res.data && res.data && res.data.status === 1) {
-                    store.dispatch('app/setProfile', res.data.response);
-                    next();
-                } else {
-                    next('/login');
-                }
-            }, err => {
-                next('/login');
-            })
-            store.dispatch('app/checkLogin')
-        }else{
-            next();
-        }
-    })
     return router;
 }

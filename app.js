@@ -22,6 +22,8 @@ app.use(session({
     }
 }))
 
+app.use('/static', express.static('dist/static'));
+
 app.post('/logout', function(req, res){
     req.session.user_id = null
     req.session.destroy();
@@ -35,9 +37,11 @@ app.post('/logout', function(req, res){
 //const serverRender = require('vue-server-renderer');
 
 const bundle = require('./dist/vue-ssr-server-bundle.json')
+const clientManifest = require('./dist/vue-ssr-client-manifest.json')
 const renderer = createBundleRenderer(bundle, {
-  //runInNewContext: false, // 推荐
-  //template: require('fs').readFileSync('./index.html', 'utf-8')
+  runInNewContext: false, // 推荐
+  template: require('fs').readFileSync('./index.template.html', 'utf-8'),
+  clientManifest
 })
 
 app.get('*', function(req, res){
@@ -51,6 +55,7 @@ app.get('*', function(req, res){
     renderer.renderToString(context, (err, html) => {
         if (err) {
             console.log(err);
+            req.headers['charset'] = 'utf-8';
             res.status(500).end('Internal Server Error' + err)
             return
         }

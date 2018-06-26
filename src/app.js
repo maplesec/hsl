@@ -159,11 +159,13 @@ export function createApp(){
     const router = createRouter()
     const store = createStore()
 
+    // axios功能未稳定, 暂不使用路由守卫
+    /*
     router.beforeEach(function(to, from, next) {
         // TODO: 判断页面是否需要权限,再执行以下代码
         // 首次打开网页,根据接口判断是否免登陆
         if(store.getters['app/profile'].needCheckLogin){
-            const profile_api = axios.get('localhost:3000/acl_user/profile');
+            const profile_api = axios.get('/acl_user/profile');
             (profile_api).then(res => {
                 console.log(JSON.stringify(res))
                 if (res.data && res.data && res.data.status === 1) {
@@ -171,17 +173,18 @@ export function createApp(){
                     next();
                 } else {
                     console.log('next1')
-                    next('/role');
+                    next('/login');
                 }
             }, err => {
                 console.log('next2')
-                next('/role');
+                next('/login');
             })
             store.dispatch('app/checkLogin')
         }else{
             next();
         }
     })
+    */
 
     const app = new Vue({
         render: h => h(App),

@@ -7,7 +7,7 @@ import axios from './services/axios'
 import prototypeFunc from './utils/prototypeFunc'
 import { createStore } from './store'
 import i18n from './lang'
-
+import { sync } from 'vuex-router-sync'
 
 import {
     Pagination,
@@ -158,6 +158,8 @@ Vue.use(prototypeFunc)
 export function createApp(){
     const router = createRouter()
     const store = createStore()
+    // 同步路由状态(route state)到 store
+    sync(store, router)
 
     // axios功能未稳定, 暂不使用路由守卫
     /*

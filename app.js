@@ -44,6 +44,8 @@ const renderer = createBundleRenderer(bundle, {
   clientManifest
 })
 
+router(app);
+
 app.get('*', function(req, res){
     // const renderer = serverRender.createRenderer({
     //     template: require('fs').readFileSync('./src/index.template.html', 'utf-8')
@@ -62,11 +64,6 @@ app.get('*', function(req, res){
         res.end(html)
     })
 })
-
-
-
-
-router(app);
 
 app.listen(3000);
 

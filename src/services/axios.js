@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 axios.defaults.timeout = 15000
-axios.defaults.baseURL = '/api'
+axios.defaults.baseURL = '/'
 
 axios.interceptors.request.use(
   config => {

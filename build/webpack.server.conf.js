@@ -25,6 +25,11 @@ const webpackConfig = merge(baseWebpackConfig, {
   entry: {
     app: './src/entry-server.js'
   },
+  resolve: {
+      alias: {
+          '../../config/config.js': '../../config/server-config.js'
+      }
+  },
   target: 'node',
   output: {
     libraryTarget: 'commonjs2'

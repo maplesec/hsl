@@ -50,6 +50,14 @@ export function createRouter(){
                         meta: {
                             title: '资源'
                         }
+                    },
+                    {
+                        path: '/draft',
+                        name: 'draft',
+                        component: resolve => require(['@/components/draft/draft'], resolve),
+                        meta: {
+                            title: '文章'
+                        }
                     }
                 ]
             },

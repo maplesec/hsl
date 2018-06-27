@@ -19,6 +19,12 @@
           <span slot="title">资源</span>
         </el-menu-item>
       </router-link>
+      <router-link :to="'/draft'">
+        <el-menu-item index="4">
+          <i class="el-icon-setting"></i>
+          <span slot="title">文章</span>
+        </el-menu-item>
+      </router-link>
     </el-menu>
   </el-scrollbar>
 

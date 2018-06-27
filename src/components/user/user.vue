@@ -86,6 +86,15 @@ export default {
   created () {
     this.initTable()
   },
+  asyncData({store}){
+    return store.dispatch('user/getList', {
+        page: 1,
+        pageSize: 5,
+        filter: '',
+        sortBy: '',
+        sort: ''
+    })
+  },
   methods: {
     initTable (isSearch) {
       if (isSearch) {

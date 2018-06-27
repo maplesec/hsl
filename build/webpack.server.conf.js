@@ -27,7 +27,7 @@ const webpackConfig = merge(baseWebpackConfig, {
   },
   resolve: {
       alias: {
-          '../../config/config.js': '../../config/server-config.js'
+          '../../config/config.js': '../../config/config-server.js'
       }
   },
   target: 'node',

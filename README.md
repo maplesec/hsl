@@ -89,3 +89,23 @@ status:
  3. web密码加密,写数据库密码再加密
  4. 初始化数据库脚本
  5. 密码错误多次，禁用账户
+
+
+分层
+# server 纯后端服务
+controller, models, mongodb,  prototype, routes, server.js
+# admin 纯前端服务
+build, config, src : dev prod
+# client SSR服务
+build, config, src : dev server client
+# dist
+admin-dist
+client-dist
+
+文件上传
+markdown编辑与展示
+
+重构：
+1. 封装数据校验
+2. router做数据校验, 及请求返回
+3. controller只做业务

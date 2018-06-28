@@ -12,6 +12,9 @@ export default class BaseComponent{
         }
         try{
             const idData = await Ids.findOne();
+            if(typeof(idData[type]) !== 'number'){
+                idData[type] = 0;
+            }
             idData[type] ++;
             await idData.save();
             return idData[type]

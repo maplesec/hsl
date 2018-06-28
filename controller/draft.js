@@ -3,6 +3,7 @@
 import BaseComponent from '../prototype/baseComponent'
 import DraftModel from '../models/draft'
 import formidable from 'formidable'
+import marked from 'marked';
 
 class Draft extends BaseComponent {
     constructor() {
@@ -73,6 +74,7 @@ class Draft extends BaseComponent {
 
     async getDraftById(req, res, next){
         const draft_id = req.params.draft_id;
+        const html = req.query.html;
         if(!draft_id || !Number(draft_id)){
             res.send({
                 status: 0,
@@ -83,10 +85,15 @@ class Draft extends BaseComponent {
         }
         try{
             const draft = await DraftModel.findOne({id: draft_id});
+            const {id, title, imagesrc, content, createTime, lastEditTime, excerpt, publish} = draft;
+            let response = { id, title, imagesrc, content, createTime, lastEditTime, excerpt, publish };
+            if(html && draft){
+                response = { ...response, content: marked(content) }
+            }
             res.send({
                 status: 1,
                 type: 'SUCCESS',
-                response: draft
+                response: response
             });
         }catch(err){
             console.log('getDraftById', err.message);

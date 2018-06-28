@@ -11,7 +11,12 @@ const cols = 'id name account'
 function allowedPermissions(user_id, resources){
     return new Promise(function(resolve,reject){
         global.acl.allowedPermissions(user_id, resources, function(err, obj){
-            resolve(obj);
+            if(err){
+                console.error('allowedPermissions', JSON.stringify(err));
+                reject({message: 'allowedPermissions failed'})
+            }else{
+                resolve(obj);
+            }
         })
     })
 }
@@ -19,7 +24,12 @@ function allowedPermissions(user_id, resources){
 function userRoles(user_id){
     return new Promise(function(resolve, reject){
         global.acl.userRoles(user_id, function(err, roles){
-            resolve(roles);
+            if(err){
+                console.error('userRoles', JSON.stringify(err));
+                reject({message: 'userRoles failed'})
+            }else{
+                resolve(roles);
+            }
         })
     })
 }
@@ -27,7 +37,12 @@ function userRoles(user_id){
 function addUserRoles(user_id, roles_to_add){
     return new Promise(function(resolve,reject){
         global.acl.addUserRoles(user_id, roles_to_add, function(err){
-            resolve(err);
+            if(err){
+                console.error('addUserRoles', JSON.stringify(err));
+                reject({message: 'addUserRoles failed'})
+            }else{
+                resolve();
+            }
         })
     })
 }
@@ -35,7 +50,12 @@ function addUserRoles(user_id, roles_to_add){
 function removeUserRoles (user_id, roles) {
     return new Promise(function (resolve,reject) {
         global.acl.removeUserRoles(user_id, roles, function (err) {
-            resolve(err);
+            if(err){
+                console.error('removeUserRoles', JSON.stringify(err));
+                reject({message: 'removeUserRoles failed'})
+            }else{
+                resolve();
+            }
         })
     })
 }

@@ -4,6 +4,19 @@ import BaseComponent from '../prototype/baseComponent'
 import ResourceModel from '../models/acl_resource'
 import formidable from 'formidable'
 
+function removeResource(id){
+    return new Promise(function(resolve,reject){
+        global.acl.removeResource(id, function(err){
+            if(err){
+                console.error('removeResource', JSON.stringify(err));
+                reject({message: 'removeResource failed'})
+            }else{
+                resolve();
+            }
+        })
+    })
+}
+
 class Resource extends BaseComponent{
     constructor(){
         super()
@@ -143,13 +156,6 @@ class Resource extends BaseComponent{
      */
     async deleteResource(req, res, next){
         const {id} = req.params;
-        function _f(id){
-            return new Promise(function(resolve,reject){
-                global.acl.removeResource(id, function(err){
-                    resolve(err);
-                })
-            })
-        }
         if(!id){
             res.send({
                 status: 0,

@@ -5,6 +5,61 @@ import RoleModel from '../models/acl_role'
 import ResourceModel from '../models/acl_resource'
 import formidable from 'formidable'
 
+const cols = 'id name'
+
+const allow = function(roleObjs){
+    return new Promise(function(resolve, reject){
+        global.acl.allow(roleObjs, function(err){
+            if(err){
+                console.error('allow', JSON.stringify(err));
+                reject({message: 'allow failed'})
+            }else{
+                resolve();
+            }
+        })
+    })
+}
+
+function removeAllow(role_id, resources){
+    return new Promise(function(resolve,reject){
+        global.acl.removeAllow(role_id, resources, function(err){
+            if(err){
+                console.error('removeAllow', JSON.stringify(err));
+                reject({message: 'removeAllow failed'})
+            }else{
+                resolve();
+            }
+        })
+    })
+}
+
+function removeRole(role_id){
+    return new Promise(function(resolve,reject){
+        global.acl.removeRole(role_id, function(err){
+            if(err){
+                console.error('removeRole', JSON.stringify(err));
+                reject({message: 'removeRole failed'})
+            }else{
+                resolve();
+            }
+        })
+    })
+}
+
+function whatResources(){
+    return new Promise(function(resolve,reject){
+        global.acl.whatResources(role_id, function(err, resources){
+            if(err){
+                console.error('whatResources', JSON.stringify(err));
+                reject({message: 'whatResources failed'})
+            }else{
+                resolve(resources);
+            }
+        })
+    })
+}
+
+
 class Role extends BaseComponent{
     constructor(){
         super()
@@ -47,11 +102,11 @@ class Role extends BaseComponent{
             let actionCount;
             if (filter) {
                 // 多字段模糊查询
-                action = RoleModel.find({$or: [{name: eval('/' + filter + '/gi')}]});
-                actionCount = RoleModel.find({$or: [{name: eval('/' + filter + '/gi')}]}).count();
+                action = RoleModel.find({$or: [{name: eval('/' + filter + '/gi')}]}, cols);
+                actionCount = RoleModel.find({$or: [{name: eval('/' + filter + '/gi')}]}, cols).count();
             } else {
-                action = RoleModel.find();
-                actionCount = RoleModel.find().count();
+                action = RoleModel.find({}, cols);
+                actionCount = RoleModel.find({}, cols).count();
             }
             if (page && pageSize){
                 // 分页与排序
@@ -88,13 +143,6 @@ class Role extends BaseComponent{
      */
     async addRole(req, res, next){
         const form = new formidable.IncomingForm();
-        const _f = function(roleObjs){
-            return new Promise(function(resolve, reject){
-                global.acl.allow(roleObjs, function(err){
-                    resolve(err);
-                })
-            })
-        }
         form.parse(req, async (err, fields, files) => {
             const {name, allows} = fields;
             try{
@@ -131,7 +179,7 @@ class Role extends BaseComponent{
                 }
                 await RoleModel.create(newRole);
                 if (allows) {
-                    await _f([{
+                    await allow([{
                         roles: [role_id.toString()],
                         allows
                     }])
@@ -160,20 +208,6 @@ class Role extends BaseComponent{
      */
     async deleteRole(req, res, next){
         const {role_id} = req.params;
-        function _f1(role_id, resources){
-            return new Promise(function(resolve,reject){
-                global.acl.removeAllow(role_id, resources, function(err){
-                    resolve(err);
-                })
-            })
-        }
-        function _f2(role_id){
-            return new Promise(function(resolve,reject){
-                global.acl.removeRole(role_id, function(err){
-                    resolve(err);
-                })
-            })
-        }
         if(!role_id || !Number(role_id)){
             res.send({
                 status: 0,
@@ -189,8 +223,8 @@ class Role extends BaseComponent{
             resourceList.forEach(function(item){
                 resources.push(item.id);
             });
-            await _f1(role_id, resources);
-            await _f2(role_id);
+            await removeAllow(role_id, resources);
+            await removeRole(role_id);
             res.send({
                 status: 1,
                 success: 'SUCCESS'
@@ -214,13 +248,6 @@ class Role extends BaseComponent{
      */
     async getRoleById(req, res, next){
         const role_id = req.params.role_id;
-        function _f(){
-            return new Promise(function(resolve,reject){
-                global.acl.whatResources(role_id, function(err, resources){
-                    resolve(resources);
-                })
-            })
-        }
         if(!role_id || !Number(role_id)){
             res.send({
                 status: 0,
@@ -230,8 +257,8 @@ class Role extends BaseComponent{
             return
         }
         try{
-            let role = await RoleModel.findOne({id: role_id});
-            const allows =  await _f();
+            let role = await RoleModel.findOne({id: role_id}, cols);
+            const allows =  await whatResources();
             const {id, name} = role;
             const mix = {id, name, allows};
             res.send({
@@ -259,20 +286,6 @@ class Role extends BaseComponent{
     async updateRole(req, res, next){
         const role_id = req.params.role_id;
         const form = new formidable.IncomingForm();
-        const _f1 = function(resources, permissions){
-            return new Promise(function(resolve, reject){
-                global.acl.removeAllow(role_id, resources, permissions, function(err){
-                    resolve(err);
-                })
-            })
-        }
-        const _f2 = function(roleObjs){
-            return new Promise(function(resolve, reject){
-                global.acl.allow(roleObjs, function(err){
-                    resolve(err);
-                })
-            })
-        }
         form.parse(req, async(err, fields, files) => {
             const {name, allows} = fields;
             try{
@@ -313,8 +326,8 @@ class Role extends BaseComponent{
                     old_resource_list.forEach(function(item){
                         old_resources.push(item.id);
                     })
-                    await _f1(old_resources, ['show', 'operate']);
-                    await _f2([{
+                    await removeAllow(old_resources, ['show', 'operate']);
+                    await allow([{
                         roles: [role_id],
                         allows
                     }])

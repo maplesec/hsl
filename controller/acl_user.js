@@ -5,6 +5,7 @@ import UserModel from '../models/acl_user'
 import ResourceModel from '../models/acl_resource'
 import RoleModel from '../models/acl_role'
 import formidable from 'formidable'
+const cols = 'id name account'
 
 class User extends BaseComponent{
     constructor(){
@@ -124,7 +125,7 @@ class User extends BaseComponent{
             });
             const permissions = await _f1(user_id, resources);
             const roles = await _f2(user_id);
-            const user_obj = await UserModel.findOne({id: user_id});
+            const user_obj = await UserModel.findOne({id: user_id}, cols);
             const {id, name, account} = user_obj;
             const mix = { id, name, account, permissions, roles };
             res.send({
@@ -179,11 +180,11 @@ class User extends BaseComponent{
             let actionCount;
             if (filter) {
                 // 多字段模糊查询
-                action = UserModel.find({$or: [{name: eval('/' + filter + '/gi')}, {account: eval('/' + filter + '/gi')}]});
-                actionCount = UserModel.find({$or: [{name: eval('/' + filter + '/gi')}, {account: eval('/' + filter + '/gi')}]}).count();
+                action = UserModel.find({$or: [{name: eval('/' + filter + '/gi')}, {account: eval('/' + filter + '/gi')}]}, cols);
+                actionCount = UserModel.find({$or: [{name: eval('/' + filter + '/gi')}, {account: eval('/' + filter + '/gi')}]}, cols).count();
             } else {
-                action = UserModel.find();
-                actionCount = UserModel.find().count();
+                action = UserModel.find({}, cols);
+                actionCount = UserModel.find({}, cols).count();
             }
             if (page && pageSize){
                 // 分页与排序
@@ -361,7 +362,7 @@ class User extends BaseComponent{
             });
             const permissions = await _f1(user_id, resources);
             const roles = await _f2(user_id);
-            const user_obj = await UserModel.findOne({id: user_id});
+            const user_obj = await UserModel.findOne({id: user_id}, cols);
             const {id, name, account} = user_obj;
             const mix = { id, name, account, permissions, roles };
             res.send({

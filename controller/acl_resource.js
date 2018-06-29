@@ -166,7 +166,7 @@ class Resource extends BaseComponent{
         }
         try{
             await ResourceModel.findOneAndRemove({id: id});
-            await _f(id);
+            await removeResource(id);
             res.send({
                 status: 1,
                 success: 'SUCCESS'

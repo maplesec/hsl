@@ -1,4 +1,4 @@
 const config = {
-    base_url: '/'
+    base_url: '/api'
 }
 export default config

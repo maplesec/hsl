@@ -20,6 +20,11 @@ const webpackConfig = merge(baseWebpackConfig, {
   entry: {
     app: './src/entry-client.js'
   },
+  resolve: {
+      alias: {
+          '../../config/config.js': '../../config/config-client.js'
+      }
+  },
   module: {
     rules: utils.styleLoaders({
       sourceMap: config.build.productionSourceMap,

@@ -9,7 +9,8 @@
     "start": "pm2 start index.js --node-args='--harmony' --name hsl",
     "stop": "pm2 stop index.js --name 'node-hsl'",
     "build-server": "node build/build-server.js",
-    "build-client": "node build/build-client.js"
+    "build-client": "node build/build-client.js",
+    "build-prod": "node build/build-prod.js"
   },
   "repository": {
     "type": "git",

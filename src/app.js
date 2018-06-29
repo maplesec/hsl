@@ -20,7 +20,7 @@ export function createApp(){
     sync(store, router)
 
     // axios功能未稳定, 暂不使用路由守卫
-    /*
+
     router.beforeEach(function(to, from, next) {
         // TODO: 判断页面是否需要权限,再执行以下代码
         // 首次打开网页,根据接口判断是否免登陆
@@ -44,7 +44,7 @@ export function createApp(){
             next();
         }
     })
-    */
+
 
     const app = new Vue({
         render: h => h(App),

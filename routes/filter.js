@@ -1,9 +1,5 @@
 function authorize (resource, permission) {
     return function (req, res, next){
-        next();
-        return;
-        // TODO: 增加接口权限校验
-        console.log('check:' + permission)
         if (!req.session.user_id) {
             res.send({
                 status: 2,

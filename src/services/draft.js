@@ -14,3 +14,6 @@ export const editDraft = (id, params) => axios.put('./draft/' + id, params)
 
 // 获取单个文章
 export const getDraft = (id) => axios.get('/draft/' + id)
+
+// 获取html文章
+export const getArticle = (id) => axios.get(`/draft/${id}?html=true`)

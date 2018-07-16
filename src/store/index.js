@@ -4,6 +4,7 @@ import app from './modules/app'
 import tagsView from './modules/tagsView'
 import user from './modules/user'
 import role from './modules/role'
+import article from './modules/article'
 
 Vue.use(Vuex)
 export function createStore () {
@@ -12,7 +13,8 @@ export function createStore () {
             app,
             tagsView,
             user,
-            role
+            role,
+            article
         },
         getters: {
             visitedViews: state => state.tagsView.visitedViews,

@@ -56,7 +56,7 @@ export function createRouter(){
                         name: 'draft',
                         component: resolve => require(['@/components/draft/draft'], resolve),
                         meta: {
-                            title: '文章'
+                            title: '草稿'
                         }
                     }
                 ]
@@ -65,6 +65,22 @@ export function createRouter(){
                 path: '/nav',
                 name: 'NavComponent',
                 component: NavComponent
+            },
+            {
+                path: '/article',
+                name: 'article',
+                component: resolve => require(['@/components/article/list'], resolve),
+                meta: {
+                    title: '文章'
+                }
+            },
+            {
+                path: '/article/:id',
+                name: 'article-detail',
+                component: resolve => require(['@/components/article/detail'], resolve),
+                meta: {
+                    title: '文章详情'
+                }
             }
         ]
     })

@@ -49,14 +49,18 @@ function addUserRoles(user_id, roles_to_add){
 
 function removeUserRoles (user_id, roles) {
     return new Promise(function (resolve,reject) {
-        global.acl.removeUserRoles(user_id, roles, function (err) {
-            if(err){
-                console.error('removeUserRoles', JSON.stringify(err));
-                reject({message: 'removeUserRoles failed'})
-            }else{
-                resolve();
-            }
-        })
+        if(roles.length){
+            global.acl.removeUserRoles(user_id, roles, function (err) {
+                if(err){
+                    console.error('removeUserRoles', JSON.stringify(err));
+                    reject({message: 'removeUserRoles failed'})
+                }else{
+                    resolve();
+                }
+            })
+        }else{
+            resolve();
+        }
     })
 }
 
@@ -404,9 +408,7 @@ class User extends BaseComponent{
                 await UserModel.update({id: user_id}, newUser)
                 if (roles) {
                     const _now = await userRoles(user_id);
-                    if(_now.length){
-                        await removeUserRoles(user_id, _now);
-                    }
+                    await removeUserRoles(user_id, _now);
                     await addUserRoles(user_id, roles);
                 }
                 res.send({

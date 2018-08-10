@@ -103,10 +103,10 @@ class Role extends BaseComponent{
             if (filter) {
                 // 多字段模糊查询
                 action = RoleModel.find({$or: [{name: eval('/' + filter + '/gi')}]}, cols);
-                actionCount = RoleModel.find({$or: [{name: eval('/' + filter + '/gi')}]}, cols).count();
+                actionCount = RoleModel.find({$or: [{name: eval('/' + filter + '/gi')}]}, cols).countDocuments();
             } else {
                 action = RoleModel.find({}, cols);
-                actionCount = RoleModel.find({}, cols).count();
+                actionCount = RoleModel.find({}, cols).countDocuments();
             }
             if (page && pageSize){
                 // 分页与排序

@@ -41,10 +41,10 @@ class Draft extends BaseComponent {
             if (filter) {
                 // 多字段模糊查询
                 action = DraftModel.find({$or: [{title: eval('/' + filter + '/gi')}]});
-                actionCount = DraftModel.find({$or: [{title: eval('/' + filter + '/gi')}]}).count();
+                actionCount = DraftModel.find({$or: [{title: eval('/' + filter + '/gi')}]}).countDocuments();
             } else {
                 action = DraftModel.find();
-                actionCount = DraftModel.find().count();
+                actionCount = DraftModel.find().countDocuments();
             }
             if (page && pageSize){
                 // 分页与排序

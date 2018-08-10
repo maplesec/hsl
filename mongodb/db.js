@@ -20,7 +20,7 @@ db.on('error', function(error){
 
 db.on('close',function(){
     console.log('数据库断开, 重新连接数据库')
-    mongoose.connect(url, {server:{auto_reconnect:true}});
+    mongoose.connect(url, {useNewUrlParser:true});
 })
 
 export default db;

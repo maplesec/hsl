@@ -404,7 +404,9 @@ class User extends BaseComponent{
                 await UserModel.update({id: user_id}, newUser)
                 if (roles) {
                     const _now = await userRoles(user_id);
-                    await removeUserRoles(user_id, _now);
+                    if(_now.length){
+                        await removeUserRoles(user_id, _now);
+                    }
                     await addUserRoles(user_id, roles);
                 }
                 res.send({

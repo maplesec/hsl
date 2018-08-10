@@ -2,7 +2,7 @@
 
 import mongoose from 'mongoose';
 import acl from 'acl';
-let url = "mongodb://test:test@localhost/test";
+let url = "mongodb://localhost/test";
 mongoose.connect(url);
 
 const db = mongoose.connection;

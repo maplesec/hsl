@@ -46,7 +46,7 @@ function removeRole(role_id){
     })
 }
 
-function whatResources(){
+function whatResources(role_id){
     return new Promise(function(resolve,reject){
         global.acl.whatResources(role_id, function(err, resources){
             if(err){
@@ -258,7 +258,7 @@ class Role extends BaseComponent{
         }
         try{
             let role = await RoleModel.findOne({id: role_id}, cols);
-            const allows =  await whatResources();
+            const allows =  await whatResources(role_id);
             const {id, name} = role;
             const mix = {id, name, allows};
             res.send({
@@ -326,7 +326,7 @@ class Role extends BaseComponent{
                     old_resource_list.forEach(function(item){
                         old_resources.push(item.id);
                     })
-                    await removeAllow(old_resources, ['show', 'operate']);
+                    await removeAllow(role_id, old_resources);
                     await allow([{
                         roles: [role_id],
                         allows

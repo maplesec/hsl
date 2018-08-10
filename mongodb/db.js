@@ -2,6 +2,7 @@
 
 import mongoose from 'mongoose';
 import acl from 'acl';
+import init from '../initdata/init';
 let url = "mongodb://localhost/test";
 mongoose.connect(url);
 
@@ -10,6 +11,7 @@ const db = mongoose.connection;
 db.once('open', () => {
     console.log('连接数据库成功')
     global.acl = new acl(new acl.mongodbBackend(db.db, 'acl_'));
+    init().then();
 })
 
 db.on('error', function(error){

@@ -136,7 +136,8 @@ export default {
           const params = {
             name: this.form.name,
             account: this.form.account,
-            password: this.form.password
+            password: this.form.password,
+            roles: this.form.roles
           }
           this.$store.dispatch('user/create', params).then((res) => {
             this.$formatMessage(res, '创建用户');

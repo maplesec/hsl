@@ -99,52 +99,51 @@ class Resource extends BaseComponent{
      * @param next
      * @returns {Promise.<void>}
      */
-    async addResource(req, res, next){
-        const form = new formidable.IncomingForm();
-        form.parse(req, async (err, fields, files) => {
-            const {id, name} = fields;
-            try{
-                if(!id){
-                    throw new Error('id is required');
-                }else if(!name){
-                    throw new Error('name is required');
-                }
-            }catch(err){
-                res.send({
-                    status: 0,
-                    type: 'ERROR_PARAMS',
-                    message: err.message
-                })
-                return
+    async addResource(id, name){
+        try{
+            if(!id){
+                throw new Error('id is required');
+            }else if(!name){
+                throw new Error('name is required');
             }
-            try{
-                const existResource = await ResourceModel.find({id: id});
-                if (existResource.length > 0){
-                    res.send({
-                        status: 0,
-                        type: 'RESOURCE_EXISTED',
-                        message: 'resource is existed'
-                    })
-                } else {
-                    const newResource = {
-                        id: id,
-                        name
+        }catch(err){
+            return({
+                status: 0,
+                type: 'ERROR_PARAMS',
+                message: err.message
+            })
+            return
+        }
+        try{
+            const existResource = await ResourceModel.find({id: id});
+            if (existResource.length > 0){
+                return({
+                    status: 0,
+                    type: 'RESOURCE_EXISTED',
+                    message: 'resource is existed'
+                })
+            } else {
+                const newResource = {
+                    id: id,
+                    name
+                }
+                await ResourceModel.create(newResource);
+                return({
+                    status: 1,
+                    success: 'SUCCESS',
+                    response: {
+                        id
                     }
-                    await ResourceModel.create(newResource);
-                    res.send({
-                        status: 1,
-                        success: 'SUCCESS'
-                    })
-                }
-            } catch(err) {
-                console.log('addResource', err.message);
-                res.send({
-                    status: 0,
-                    type: 'ERROR_DB',
-                    message: err.message
                 })
             }
-        })
+        } catch(err) {
+            console.log('addResource', err.message);
+            return({
+                status: 0,
+                type: 'ERROR_DB',
+                message: err.message
+            })
+        }
     }
 
     /**

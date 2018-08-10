@@ -29,14 +29,14 @@ db.createUser({user:"root",pwd:"root",roles:["root"]})
 
 `
 use test
-db.createUser({user:"test",pwd:"test",roles:[{role:"dbOwnder",db:"test"}]})
+db.createUser({user:"test",pwd:"test",roles:[{role:"dbOwner",db:"test"}]})
 use admin
 db.system.users.find()
 `
 
 # 开启认证
 mongo.config 中auth设置为true
-
+数据库连接改为 mongodb://test:test@localhost/test
 
 # node_acl
 
@@ -110,3 +110,5 @@ markdown编辑与展示
 2. router做数据校验, 及请求返回
 3. controller只做业务
 4. get请求, 返回的字段做约束
+
+

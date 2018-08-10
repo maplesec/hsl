@@ -141,62 +141,61 @@ class Role extends BaseComponent{
      * @param next
      * @returns {Promise.<void>}
      */
-    async addRole(req, res, next){
-        const form = new formidable.IncomingForm();
-        form.parse(req, async (err, fields, files) => {
-            const {name, allows} = fields;
-            try{
-                if(!name){
-                    throw new Error('name is required');
-                }
-                if(allows){
-                    //校验是否符合规范
-                    if (typeof(allows) !== 'object') {
-                        throw new Error('allows is not object')
-                    } else {
-                        allows.forEach(function(allow){
-                            if(!allow.resources){
-                                throw new Error('resources is invalid')
-                            }
-                            if(!allow.permissions){
-                                throw new Error('permissions is invalid')
-                            }
-                        })
-                    }
-                }
-            }catch(err){
-                res.send({
-                    status: 0,
-                    type: 'ERROR_PARAMS',
-                    message: err.message
-                })
+    async addRole(name, allows){
+        try{
+            if(!name){
+                throw new Error('name is required');
             }
-            try{
-                const role_id = await this.getId('role_id');
-                const newRole = {
-                    id: role_id,
-                    name
+            if(allows){
+                //校验是否符合规范
+                if (typeof(allows) !== 'object') {
+                    throw new Error('allows is not object')
+                } else {
+                    allows.forEach(function(allow){
+                        if(!allow.resources){
+                            throw new Error('resources is invalid')
+                        }
+                        if(!allow.permissions){
+                            throw new Error('permissions is invalid')
+                        }
+                    })
                 }
-                await RoleModel.create(newRole);
-                if (allows) {
-                    await allow([{
-                        roles: [role_id.toString()],
-                        allows
-                    }])
-                }
-                res.send({
-                    status: 1,
-                    success: 'SUCCESS'
-                })
-            }catch(err){
-                console.log('addRole', err.message);
-                res.send({
-                    status: 0,
-                    type: 'ERROR_DB',
-                    message: err.message
-                })
             }
-        })
+        }catch(err){
+            return({
+                status: 0,
+                type: 'ERROR_PARAMS',
+                message: err.message
+            })
+        }
+        try{
+            const role_id = await this.getId('role_id');
+            const newRole = {
+                id: role_id,
+                name
+            }
+            await RoleModel.create(newRole);
+            if (allows) {
+                await allow([{
+                    roles: [role_id.toString()],
+                    allows
+                }])
+            }
+            return({
+                status: 1,
+                success: 'SUCCESS',
+                response: {
+                    id: role_id
+                }
+            })
+        }catch(err){
+            console.log('addRole', err.message);
+            return({
+                status: 0,
+                type: 'ERROR_DB',
+                message: err.message
+            })
+        }
     }
 
     /**

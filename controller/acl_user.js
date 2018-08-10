@@ -10,7 +10,7 @@ const cols = 'id name account'
 
 function allowedPermissions(user_id, resources){
     return new Promise(function(resolve,reject){
-        global.acl.allowedPermissions(user_id, resources, function(err, obj){
+        global.acl.allowedPermissions(user_id.toString(), resources, function(err, obj){
             if(err){
                 console.error('allowedPermissions', JSON.stringify(err));
                 reject({message: 'allowedPermissions failed'})
@@ -23,7 +23,7 @@ function allowedPermissions(user_id, resources){
 
 function userRoles(user_id){
     return new Promise(function(resolve, reject){
-        global.acl.userRoles(user_id, function(err, roles){
+        global.acl.userRoles(user_id.toString(), function(err, roles){
             if(err){
                 console.error('userRoles', JSON.stringify(err));
                 reject({message: 'userRoles failed'})
@@ -36,9 +36,8 @@ function userRoles(user_id){
 
 function addUserRoles(user_id, roles_to_add){
     return new Promise(function(resolve,reject){
-        global.acl.addUserRoles(user_id, roles_to_add, function(err){
+        global.acl.addUserRoles(user_id.toString(), roles_to_add, function(err){
             if(err){
-                console.error('addUserRoles', JSON.stringify(err));
                 reject({message: 'addUserRoles failed'})
             }else{
                 resolve();
@@ -50,7 +49,7 @@ function addUserRoles(user_id, roles_to_add){
 function removeUserRoles (user_id, roles) {
     return new Promise(function (resolve,reject) {
         if(roles.length){
-            global.acl.removeUserRoles(user_id, roles, function (err) {
+            global.acl.removeUserRoles(user_id.toString(), roles, function (err) {
                 if(err){
                     console.error('removeUserRoles', JSON.stringify(err));
                     reject({message: 'removeUserRoles failed'})
@@ -174,13 +173,13 @@ class User extends BaseComponent{
     /**
      * 分页获取用户列表
      * 如果page和pageSize信息不全,默认返回所有
-     * @param req
-     * @param res
-     * @param next
-     * @returns {Promise.<void>}
+     * @param {*} page 
+     * @param {*} pageSize 
+     * @param {*} filter 
+     * @param {*} sort 
+     * @param {*} sortBy 
      */
-    async getUsers(req, res, next) {
-        const {page, pageSize, filter = '', sort = 'desc', sortBy = ''} = req.query;
+    async getUsers(page, pageSize, filter = '', sort = 'desc', sortBy = '') {
         let sortObj = {'id': -1}
         try {
             if (page && pageSize) {
@@ -195,12 +194,11 @@ class User extends BaseComponent{
                 sortObj[sortBy] = sort === 'asc' ? 1 : -1;
             }
         } catch (err) {
-            res.send({
+            return({
                 status: 0,
                 type: 'ERROR_PARAMS',
                 message: err.message
             })
-            return
         }
         try {
             const offset = (page - 1) * pageSize;
@@ -222,7 +220,7 @@ class User extends BaseComponent{
             }
             const totalCount = await actionCount;
             const result = await action;
-            res.send({
+            return({
                 status: 1,
                 type: 'SUCCESS',
                 response: {
@@ -232,7 +230,7 @@ class User extends BaseComponent{
             })
         } catch (err) {
             console.log('getUsers', err.message)
-            res.send({
+            return({
                 status: 0,
                 type: 'ERROR_DB',
                 message: err.message
@@ -242,57 +240,55 @@ class User extends BaseComponent{
 
     /**
      * 增加用户, 并指定角色
-     * @param req
-     * @param res
-     * @param next
-     * @returns {Promise.<void>}
+     * @param {*} account 
+     * @param {*} name 
+     * @param {*} password 
+     * @param {*} roles 
      */
-    async addUser(req, res, next){
-        const form = new formidable.IncomingForm();
-        form.parse(req, async (err, fields, files) => {
-            const {account, name, password, roles} = fields;
-            try {
-                if (!account) {
-                    throw new Error('account is required');
-                } else if (!name) {
-                    throw new Error('name is required');
-                } else if (!password) {
-                    throw new Error('password is required');
-                }
-            }catch (err) {
-                res.send({
-                    status: 0,
-                    type: 'ERROR_PARAMS',
-                    message: err.message
-                })
-                return
+    async addUser(account, name, password, roles){
+        try {
+            if (!account) {
+                throw new Error('account is required');
+            } else if (!name) {
+                throw new Error('name is required');
+            } else if (!password) {
+                throw new Error('password is required');
             }
-            try {
-                const user_id = await this.getId('user_id');
-                const newUser = {
-                    id: user_id,
-                    account,
-                    name,
-                    password
-                }
-                const user = await UserModel.create(newUser);
-                if (roles) {
-                    // 指定用户角色
-                    await addUserRoles(user_id, roles);
-                }
-                res.send({
-                    status: 1,
-                    type: 'SUCCESS'
-                })
-            }catch (err) {
-                console.log('addUser', err.message);
-                res.send({
-                    status: 0,
-                    type: 'ERROR_DB',
-                    message: err.message
-                })
+        }catch (err) {
+            return({
+                status: 0,
+                type: 'ERROR_PARAMS',
+                message: err.message
+            })
+        }
+        try {
+            const user_id = await this.getId('user_id');
+            const newUser = {
+                id: user_id,
+                account,
+                name,
+                password
             }
-        })
+            const user = await UserModel.create(newUser);
+            if (roles) {
+                // 指定用户角色
+                await addUserRoles(user_id, roles);
+            }
+            return({
+                status: 1,
+                type: 'SUCCESS',
+                response: {
+                    id: user_id
+                }
+            })
+        }catch (err) {
+            console.log('addUser', err.message);
+            return({
+                status: 0,
+                type: 'ERROR_DB',
+                message: err.message
+            })
+        }
     }
 
     /**
@@ -302,28 +298,25 @@ class User extends BaseComponent{
      * @param next
      * @returns {Promise.<void>}
      */
-    async deleteUser (req, res, next) {
-        const {user_id} = req.params;
-
+    async deleteUser (user_id) {
         if (!user_id || !Number(user_id)) {
-            res.send({
+            return({
                 status: 0,
                 type: 'ERROR_PARAMS',
                 message: 'invalid user_id',
             })
-            return;
         }
         try{
             await UserModel.findOneAndRemove({id: user_id});
             const roles = await userRoles(user_id);
             await removeUserRoles(user_id, roles);
-            res.send({
+            return({
                 status: 1,
                 type: 'SUCCESS'
             })
         }catch (err) {
             console.log('deleteUser', err.message);
-            res.send({
+            return({
                 status: 0,
                 type: 'ERROR_DB',
                 message: err.message

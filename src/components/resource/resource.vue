@@ -1,219 +1,139 @@
 <template>
   <div class="app-container calendar-list-container">
     <div class="filter-container">
+      <el-input v-model="searchValue" style="width: 200px;"></el-input>
+      <el-button class="filter-item" @click="handleSearch()" type="promary">搜索</el-button>
       <el-button class="filter-item" @click="handleCreate" type="primary" icon="el-icon-edit">{{$t('common.add')}}</el-button>
-      <el-input v-model="searchValue"></el-input>
-      <el-button class="filter-item" @click="initTable" type="promary">搜索</el-button>
-      <el-button class="filter-item" @click="login" type="promary">登录</el-button>
-      <el-button class="filter-item" @click="logout" type="promary">登出</el-button>
     </div>
 
-    <el-dialog :title="$t('common.add') + $t('common.space') + $t('resource.resource')" :visible.sync="dialogFormVisible">
-      <el-form :rules="rules" ref="dataForm" :model="form" label-position="left" label-width="70px" >
-        <el-form-item :label="$t('resource.id')" :label-width="formLabelWidth" prop="id">
-          <el-input v-model="form.id" auto-complete="off"></el-input>
-        </el-form-item>
-        <el-form-item :label="$t('resource.name')" :label-width="formLabelWidth" prop="name">
-          <el-input v-model="form.name" auto-complete="off"></el-input>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogFormVisible = false">{{$t('common.cancel')}}</el-button>
-        <el-button type="primary" v-if="dialogStatus==='create'" @click="createResource">{{$t('common.confirm')}}</el-button>
-        <el-button type="primary" v-if="dialogStatus==='edit'" @click="editResource">{{$t('common.confirm')}}</el-button>
-      </div>
+    <el-dialog :title="$t('common.add') + $t('common.space') + $t('resource.resource')" :visible.sync="dialog.dialogVisible" @open="dialog.contentVisible = true" @closed="dialog.contentVisible = false">
+      <create-resource v-if="dialog.contentVisible" :status="dialog.status" :id="dialog.id" @close="handleClose"></create-resource>
     </el-dialog>
 
-    <el-table
-      v-loading="loading"
-      :data="tableData"
-      @sort-change="handleSortChange"
-      style="width: 100%">
-      <el-table-column
-        prop="id"
-        :label="$t('resource.id')"
-        sortable="custom"
-        width="180">
-      </el-table-column>
-      <el-table-column
-        prop="name"
-        :label="$t('resource.name')"
-        sortable="custom"
-        width="180">
-      </el-table-column>
-      <el-table-column :label="$t('common.operation')">
-        <template slot-scope="scope">
-          <el-button size="mini" @click="handleEdit(scope.row.id)">{{$t('common.edit')}}</el-button>
-          <el-button size="mini" type="danger" @click="handleDelete(scope.row.id)">{{$t('common.delete')}}</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <el-pagination
-      @size-change="handleSizeChange"
-      @current-change="handleCurrentChange"
-      :current-page="pagination.page"
-      :page-sizes="[2, 5, 10, 20]"
-      :page-size="pagination.pageSize"
-      layout="total, sizes, prev, pager, next, jumper"
-      :total="pagination.totalCount">
-    </el-pagination>
+    <table-custom :module="table.module" :cols="table.cols" :btns="table.btns" @operation="handleOperation"></table-custom>
   </div>
-
 </template>
 
 <script>
 
-import * as api from '@/services/resource'
-import * as api2 from '@/services/user'
-export default {
-  data () {
-    return {
-      tableData: [],
-      pagination: {
-        totalCount: 0,
-        page: 1,
-        pageSize: 5,
-        sortBy: '',
-        sort: ''
-      },
-      searchValue: '',
-      loading: true,
-      dialogFormVisible: false,
-      dialogStatus: '',
-      form: {
-        id: '',
-        name: ''
-      },
-      rules: {
-        id: [
-          {required: true, message: this.$t('validation.require') + this.$t('common.space') + this.$t('resource.id')},
-          {min: 3, max: 12, message: '3-12' + this.$t('validation.characters')}
-        ],
-        name: [
-          {required: true, message: this.$t('validation.require') + this.$t('common.space') + this.$t('resource.name')},
-          {min: 3, max: 12, message: '3-12' + this.$t('validation.characters')}
-        ]
-      },
-      formLabelWidth: '120px'
-    }
-  },
-  created () {
-    this.initTable()
-  },
-  methods: {
-    initTable (isSearch) {
-      this.loading = true
-      if (isSearch) {
-        this.pagination.page = 1
-      }
-      const query = {
-        page: this.pagination.page,
-        pageSize: this.pagination.pageSize,
-        filter: this.searchValue,
-        sortBy: this.pagination.sortBy,
-        sort: this.pagination.sort
-      }
-      this.$doRequest(api.getResourceList(query), '获取资源列表', this.$showErrorType.none).then((res) => {
-        setTimeout(() => {
-          this.loading = false
-        }, 200)
-        this.tableData = res.result
-        this.pagination.totalCount = res.totalCount
-      }, (err) => {
-        if (err) {
-          console.log(err)
-        }
-        setTimeout(() => {
-          this.loading = false
-        }, 200)
-      })
-    },
-    handleSizeChange (val) {
-      this.pagination.pageSize = val
-      this.initTable()
-    },
-    handleCurrentChange (val) {
-      this.pagination.page = val
-      this.initTable()
-    },
-    handleSortChange (val) {
-      this.pagination.sortBy = val.prop
-      if (val.order) {
-        this.pagination.sort = val.order === 'ascending' ? 'asc' : 'desc'
-      } else {
-        this.pagination.sort = null
-      }
-      this.initTable()
-    },
-    resetForm () {
-      this.form = {
-        name: '',
-        id: ''
-      }
-    },
-    login () {
-      api2.login().then((res) => {
-        console.log(res)
-      })
-    },
-    logout () {
-      api2.logout().then((res) => {
-        console.log(res)
-      })
-    },
-    handleCreate () {
-      this.resetForm()
-      this.dialogStatus = 'create'
-      this.dialogFormVisible = true
-      this.$nextTick(() => {
-        this.$refs['dataForm'].clearValidate()
-      })
-    },
-    createResource () {
-      this.$refs['dataForm'].validate((valid) => {
-        if (valid) {
-          const params = {
-            name: this.form.name,
-            id: this.form.id
-          }
-          console.log('params', params)
-          this.$doRequest(api.addResource(params), '增加资源', this.$showErrorType.none).then((res) => {
+    import * as api from '@/services/resource'
+    import createResource from './modal/createResource.vue'
+    import tableCustom from '../user/table.vue'
+    export default {
+        components: {
+            createResource,
+            tableCustom
+        },
+        data () {
+            return {
+                searchValue: '',
+                dialog: {
+                    dialogVisible: false,
+                    contentVisible: false,
+                    status: 'create',
+                    id: ''
+                },
+                table: {
+                    module: 'resource',
+                    cols: [
+                        {
+                            prop: 'id',
+                            label: 'ID',
+                            width: '180',
+                            sortable: 'false'
+                        },
+                        {
+                            prop: 'name',
+                            label: this.$t('resource.name'),
+                            width: '180',
+                            sortable: 'custom'
+                        },
+                    ],
+                    btns: [
+                        {
+                            type: 'edit',
+                            name: this.$t('common.edit'),
+                            color: 'default'
+                        },
+                        {
+                            type: 'delete',
+                            name: this.$t('common.delete'),
+                            color: 'danger'
+                        }
+                    ]
+                }
+            }
+        },
+        created () {
             this.initTable()
-            this.dialogFormVisible = false
-          })
+        },
+        asyncData({store}){
+            return store.dispatch(`${this.table.module}/getList`, {
+                page: 1,
+                pageSize: 5,
+                filter: '',
+                sortBy: '',
+                sort: ''
+            })
+        },
+        methods: {
+            initTable (isSearch) {
+                if (isSearch) {
+                    this.$store.dispatch(`${this.table.module}/setPagination`, {page: 1});
+                }
+                this.$store.dispatch(`${this.table.module}/getList`).then((e)=>{
+                    //TODO: 出错的提示
+                    this.$formatMessage(e, '获取用户列表', 'none');
+            })
+            },
+            handleSearch () {
+                this.$store.dispatch(`${this.table.module}/setPagination`, {filter: this.searchValue});
+                this.initTable();
+            },
+            handleCreate () {
+                this.dialog.status = 'create';
+                this.dialog.id = '';
+                this.dialog.dialogVisible = true
+            },
+            handleEdit (id) {
+                this.dialog.status = 'edit';
+                this.dialog.id = id;
+                this.dialog.dialogVisible = true
+            },
+            handleClose (fresh) {
+                if (fresh) {
+                    this.initTable();
+                }
+                this.dialog.dialogVisible = false
+            },
+            handleDelete (id, row) {
+                this.$confirm('此操作将永久删除该用户, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    this.$store.dispatch(`${this.table.module}/delete`, id).then(() => {
+                    this.initTable()
+                this.$message({
+                    type: 'success',
+                    message: '删除成功!'
+                });
+            })
+
+            }).catch(() => {
+                    // 取消删除
+                });
+            },
+            handleOperation ({type, row}) {
+                switch(type){
+                    case 'edit':
+                        this.handleEdit(row.id);
+                        break;
+                    case 'delete':
+                        this.handleDelete(row.id, row);
+                        break;
+                }
+            }
         }
-      })
-    },
-    handleEdit (id) {
-      this.$doRequest(api.getResource(id), '获取用户', this.$showErrorType.none).then((res) => {
-        this.form = res || {}
-        this.dialogStatus = 'edit'
-        this.dialogFormVisible = true
-        this.$nextTick(() => {
-          this.$refs['dataForm'].clearValidate()
-        })
-      })
-    },
-    editResource () {
-      this.$refs['dataForm'].validate((valid) => {
-        if (valid) {
-          const params = {
-            name: this.form.name,
-            id: this.form.id
-          }
-          this.$doRequest(api.editResource(this.form.id, params), '编辑资源').then(() => {
-            this.initTable()
-            this.dialogFormVisible = false
-          })
-        }
-      })
-    },
-    handleDelete (id, row) {
-      console.log('delete', id, row)
-      api.deleteResource(id).then(() => {
-        this.initTable()
-      })
     }
-  }
-}
 </script>

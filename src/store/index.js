@@ -4,6 +4,7 @@ import app from './modules/app'
 import tagsView from './modules/tagsView'
 import user from './modules/user'
 import role from './modules/role'
+import resource from './modules/resource'
 import article from './modules/article'
 
 Vue.use(Vuex)
@@ -14,6 +15,7 @@ export function createStore () {
             tagsView,
             user,
             role,
+            resource,
             article
         },
         getters: {

@@ -1,11 +1,5 @@
 <template>
   <div class="app-container calendar-list-container">
-    <div class="filter-container">
-      <el-input v-model="searchValue" style="width: 200px;"></el-input>
-      <el-button class="filter-item" @click="initTable(true)" type="promary">搜索</el-button>
-      <el-button class="filter-item" @click="handleCreate(true)" type="primary" icon="el-icon-edit">{{$t('common.add')}}</el-button>
-    </div>
-
     <el-table
       v-loading="loading"
       :data="tableData"
@@ -20,8 +14,13 @@
       </el-table-column>
       <el-table-column :label="$t('common.operation')">
         <template slot-scope="scope">
-          <el-button size="mini" @click="handleEdit(scope.row.id)">{{$t('common.edit')}}</el-button>
-          <el-button size="mini" type="danger" @click="handleDelete(scope.row.id)">{{$t('common.delete')}}</el-button>
+          <el-button v-for="btn in btns"
+            size="mini"
+            @click="handleOperation(btn.type, scope.row)"
+            :type="btn.color"
+            :key="btn.type">
+            {{btn.name}}
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -39,14 +38,11 @@
 
 <script>
 
-import * as api from '@/services/user'
-import * as api2 from '@/services/role'
-import createUser from './modal/createUser.vue'
-
 export default {
   props:{
     module: String,
-    cols: Array
+    cols: Array,
+    btns: Array
   },
   data () {
     return {
@@ -55,82 +51,41 @@ export default {
   },
   computed: {
     tableData(){
-      return this.$store.state.user.list.data;
+      return this.$store.state[this.module].list.data;
     },
     loading(){
-      return this.$store.state.user.list.loading;
+      return this.$store.state[this.module].list.loading;
     },
     pagination() {
-      return this.$store.state.user.list.pagination;
+      return this.$store.state[this.module].list.pagination;
     }
-  },
-  created () {
-    console.log("this is table: ##########",this.cols)
-    this.initTable()
-  },
-  asyncData({store}){
-    return store.dispatch('user/getList', {
-        page: 1,
-        pageSize: 5,
-        filter: '',
-        sortBy: '',
-        sort: ''
-    })
   },
   methods: {
     initTable (isSearch) {
-      if (isSearch) {
-        this.$store.dispatch('user/setPagination', {page: 1});
-      }
-      const query = {
-        page: this.pagination.page,
-        pageSize: this.pagination.pageSize,
-        filter: this.searchValue,
-        sortBy: this.pagination.sortBy,
-        sort: this.pagination.sort
-      }
-      this.$store.dispatch('user/getList', query).then((e)=>{
+      this.$store.dispatch(`${this.module}/getList`).then((e) => {
         //TODO: 出错的提示
-        this.$formatMessage(e, '获取用户列表');
+        this.$formatMessage(e, '获取用户列表', 'none');
       })
     },
     handleSizeChange (val) {
-      this.$store.dispatch('user/setPagination', {pageSize: val});
+      this.$store.dispatch(`${this.module}/setPagination`, {pageSize: val});
       this.initTable()
     },
     handleCurrentChange (val) {
-      this.$store.dispatch('user/setPagination', {page: val});
+      this.$store.dispatch(`${this.module}/setPagination`, {page: val});
       this.initTable()
     },
     handleSortChange (val) {
-      this.$store.dispatch('user/setPagination', {sortBy: val.prop});
+      this.$store.dispatch(`${this.module}/setPagination`, {sortBy: val.prop});
       if (val.order) {
-        this.$store.dispatch('user/setPagination', {sort: val.order === 'ascending' ? 'asc' : 'desc'});
+        this.$store.dispatch(`${this.module}/setPagination`, {sort: val.order === 'ascending' ? 'asc' : 'desc'});
       } else {
-        this.$store.dispatch('user/setPagination', {sort: null});
+        this.$store.dispatch(`${this.module}/setPagination`, {sort: null});
       }
       this.initTable()
     },
-    handleCreate () {
-      this.dialog.status = 'create';
-      this.dialog.id = '';
-      this.dialog.dialogVisible = true
-    },
-    handleEdit (id) {
-      this.dialog.status = 'edit';
-      this.dialog.id = id;
-      this.dialog.dialogVisible = true
-    },
-    handleClose (fresh) {
-      if (fresh) {
-        this.initTable();
-      }
-      this.dialog.dialogVisible = false
-    },
-    handleDelete (id, row) {
-      this.$doRequest(api.deleteUser(id), '删除用户').then(() => {
-        this.initTable()
-      })
+    handleOperation(type, row){
+        this.$emit('operation', {type, row});
     }
   }
 }

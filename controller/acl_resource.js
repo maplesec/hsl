@@ -60,10 +60,10 @@ class Resource extends BaseComponent{
             if (filter) {
                 // 多字段模糊查询
                 action = ResourceModel.find({$or: [{id: eval('/' + filter + '/gi')}]});
-                actionCount = ResourceModel.find({$or: [{id: eval('/' + filter + '/gi')}]}).countDocuments();
+                actionCount = ResourceModel.find({$or: [{id: eval('/' + filter + '/gi')}]}).count();
             } else {
                 action = ResourceModel.find();
-                actionCount = ResourceModel.find().countDocuments();
+                actionCount = ResourceModel.find().count();
             }
             if (page && pageSize){
                 // 分页与排序

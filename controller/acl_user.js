@@ -207,10 +207,10 @@ class User extends BaseComponent{
             if (filter) {
                 // 多字段模糊查询
                 action = UserModel.find({$or: [{name: eval('/' + filter + '/gi')}, {account: eval('/' + filter + '/gi')}]}, cols);
-                actionCount = UserModel.find({$or: [{name: eval('/' + filter + '/gi')}, {account: eval('/' + filter + '/gi')}]}, cols).countDocuments();
+                actionCount = UserModel.find({$or: [{name: eval('/' + filter + '/gi')}, {account: eval('/' + filter + '/gi')}]}, cols).count();
             } else {
                 action = UserModel.find({}, cols);
-                actionCount = UserModel.find({}, cols).countDocuments();
+                actionCount = UserModel.find({}, cols).count();
             }
             if (page && pageSize){
                 // 分页与排序

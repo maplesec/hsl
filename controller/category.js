@@ -47,10 +47,10 @@ class Category extends BaseComponent{
             if (filter) {
                 // 多字段模糊查询
                 action = CategoryModel.find({$or: [{name: eval('/' + filter + '/gi')}]});
-                actionCount = CategoryModel.find({$or: [{name: eval('/' + filter + '/gi')}]}).countDocuments();
+                actionCount = CategoryModel.find({$or: [{name: eval('/' + filter + '/gi')}]}).count();
             } else {
                 action = CategoryModel.find();
-                actionCount = CategoryModel.find().countDocuments();
+                actionCount = CategoryModel.find().count();
             }
             if (page && pageSize){
                 // 分页与排序

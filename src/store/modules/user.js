@@ -12,7 +12,8 @@ const user = {
         page: 1,
         pageSize: 5,
         sortBy: '',
-        sort: ''
+        sort: '',
+        filter: ''
       }
     },
   },
@@ -31,9 +32,9 @@ const user = {
     }
   },
   actions: {
-    getList({ commit }, query ){
+    getList({ commit, state }){
       commit('LOADING_lIST');
-      return $doRequest(api.getUserList(query), (formatResponse)=>{
+      return $doRequest(api.getUserList(state.list.pagination), (formatResponse)=>{
         // TODO: 存入store
         commit('SET_lIST', formatResponse);
       })
@@ -49,6 +50,9 @@ const user = {
     },
     update({commit}, {id, params}){
       return $doRequest(api.editUser(id, params))
+    },
+    delete({commit}, id){
+      return $doRequest(api.deleteUser(id))
     }
   }
 }

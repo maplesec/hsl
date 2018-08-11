@@ -12,7 +12,8 @@ const role = {
         page: 1,
         pageSize: 5,
         sortBy: '',
-        sort: ''
+        sort: '',
+        filter: ''
       }
     }
   },
@@ -31,15 +32,27 @@ const role = {
     }
   },
   actions: {
-    getList({ commit }, query ){
+    getList({ commit, state}){
       commit('LOADING_lIST');
-      return $doRequest(api.getRoleList(query), (formatResponse)=>{
+      return $doRequest(api.getRoleList(state.list.pagination), (formatResponse)=>{
         // TODO: 存入store
         commit('SET_lIST', formatResponse);
       })
     },
     setPagination({ commit }, pagination){
       commit('SET_PAGINATION', pagination);
+    },
+    getDetail({commit}, id){
+        return $doRequest(api.getRole(id))
+    },
+    create({commit}, params){
+        return $doRequest(api.addRole(params))
+    },
+    update({commit}, {id, params}){
+        return $doRequest(api.editRole(id, params))
+    },
+    delete({commit}, id){
+        return $doRequest(api.deleteRole(id))
     },
     getListAll({commit}){
       return $doRequest(api.getRoleAll())

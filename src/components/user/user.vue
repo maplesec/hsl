@@ -109,7 +109,7 @@ export default {
       }
       this.$store.dispatch('user/getList', query).then((e)=>{
         //TODO: 出错的提示
-        this.$formatMessage(e, '获取用户列表');
+        this.$formatMessage(e, '获取用户列表', 'none');
       })
     },
     handleSizeChange (val) {
@@ -146,9 +146,22 @@ export default {
       this.dialog.dialogVisible = false
     },
     handleDelete (id, row) {
-      this.$doRequest(api.deleteUser(id), '删除用户').then(() => {
-        this.initTable()
-      })
+      this.$confirm('此操作将永久删除该用户, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.$doRequest(api.deleteUser(id), '删除用户').then(() => {
+            this.initTable()
+            this.$message({
+              type: 'success',
+              message: '删除成功!'
+            });
+          })
+          
+        }).catch(() => {
+          // 取消删除       
+        });
     }
   }
 }

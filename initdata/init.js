@@ -8,7 +8,8 @@ import UserData from './user';
 async function init(){
     // 根据是否有用户判断是否需要初始化 
     // TODO： 更全面地判断如何初始化
-    if(await User.getUsers().length===0){
+    const userlist = await User.getUsers();
+    if(userlist.response.totalCount===0){
         ResourceData.map(async function(item){
             await Resource.addResource(item.id, item.name);
         })

@@ -1,20 +1,20 @@
 <template>
     <div>
         <el-form :rules="rules" ref="dataForm" :model="form" label-position="left" label-width="70px" >
-            <!-- <el-form-item :label="$t('resource.id')" :label-width="formLabelWidth" prop="id">
-                <el-input v-model="form.id" auto-complete="off"></el-input>
-            </el-form-item>
-            <el-form-item :label="$t('resource.name')" :label-width="formLabelWidth" prop="name">
-                <el-input v-model="form.name" auto-complete="off"></el-input>
-            </el-form-item> -->
-            <el-form-item v-for="ele in elements" :key="ele.key" :label="ele.label" :label-width="formLabelWidth" :prop="ele.key">
-                <el-input v-model="form[ele.key]" auto-complete="off"></el-input>
-            </el-form-item>
+            <template v-for="ele in elements">
+                <el-form-item v-if="ele.type==='text'" :key="ele.key" :label="ele.label" :label-width="formLabelWidth" :prop="ele.key">
+                    <el-input v-model="form[ele.key]" auto-complete="off" :disabled="ele.absent ? ele.absent.includes(status) : false"></el-input>
+                </el-form-item>
+                <template v-if="ele.type==='slot'">
+                    <slot v-bind:form="form"></slot>
+                </template>
+            </template>
+
         </el-form>
         <div slot="footer" class="dialog-footer">
             <el-button @click="close(false)">{{$t('common.cancel')}}</el-button>
-            <el-button type="primary" v-if="status==='create'" @click="createResource">{{$t('common.confirm')}}</el-button>
-            <el-button type="primary" v-if="status==='edit'" @click="editResource">{{$t('common.confirm')}}</el-button>
+            <el-button type="primary" v-if="status==='create'" @click="create">{{$t('common.confirm')}}</el-button>
+            <el-button type="primary" v-if="status==='edit'" @click="edit">{{$t('common.confirm')}}</el-button>
         </div>
     </div>
 </template>
@@ -23,40 +23,20 @@
     export default {
         props: {
             id: String | Number,
-            status: String
+            status: String,
+            options: Object
         },
         data () {
+            let form = {};
+            this.options.elements.map((ele) => {
+                form[ele.key] = ele.initValue;
+            })
             return {
-                rules: {
-                    id: [
-                        {required: true, message: this.$t('validation.require') + this.$t('common.space') + this.$t('resource.id')},
-                        {min: 3, max: 12, message: '3-12' + this.$t('validation.characters')}
-                    ],
-                    name: [
-                        {required: true, message: this.$t('validation.require') + this.$t('common.space') + this.$t('resource.name')},
-                        {min: 3, max: 12, message: '3-12' + this.$t('validation.characters')}
-                    ]
-                },
+                rules: this.options.rules,
                 formLabelWidth: '120px',
-                elements: [
-                    {
-                        type: 'text',
-                        key: 'id',
-                        label: this.$t('resource.id'),
-                        initValue: ''
-                    },
-                    {
-                        type: 'text',
-                        key: 'name',
-                        label: this.$t('resource.name'),
-                        initValue: ''
-                    }
-                ],
-                form: {
-                    id: '',
-                    name: ''
-                },
-                
+                elements: this.options.elements,
+                form: form,
+                module: this.options.module
             }
         },
         created(){
@@ -70,20 +50,16 @@
         },
         methods: {
             resetForm () {
-                this.form = {
-                    name: '',
-                    id: ''
-                }
+                let form = {};
+                this.elements.map(function(ele){
+                    form[ele.key] = ele.initValue;
+                })
+                this.form = form;
             },
             getForm (id) {
-                return this.$store.dispatch('resource/getDetail', id).then((res) => {
+                return this.$store.dispatch(`${this.module}/getDetail`, id).then((res) => {
+                    console.log(res);
                     this.form = res.result || {};
-                    
-                    this.elements.map(function(ele){
-                        ele.value = res.result[ele.key];
-                    })
-
-
                     this.$formatMessage(res, '获取资源详情');
                     this.$nextTick(() => {
                         this.$refs['dataForm'].clearValidate()
@@ -93,29 +69,33 @@
                     return Promise.reject();
                 })
             },
-            createResource () {
+            create () {
                 this.$refs['dataForm'].validate((valid) => {
                     if (valid) {
-                        const params = {
-                            name: this.form.name,
-                            id: this.form.id
-                        }
-                        this.$store.dispatch('resource/create', params).then((res) => {
+                        let params = {};
+                        this.elements.map((ele) => {
+                            if(!ele.absent || !ele.absent.includes('create')){
+                                params[ele.key] = this.form[ele.key];
+                            }
+                        })
+                        this.$store.dispatch(`${this.module}/create`, params).then((res) => {
                             this.$formatMessage(res, '创建资源');
                             this.close(true);
                         })
                     }
                 })
             },
-            editResource () {
+            edit () {
                 this.$refs['dataForm'].validate((valid) => {
                     console.log(this.form.roles)
                     if (valid) {
-                        const params = {
-                            name: this.form.name,
-                            id: this.form.id
-                        }
-                        this.$store.dispatch('resource/update', {id: this.form.id, params}).then((res) => {
+                        let params = {};
+                        this.elements.map((ele) => {
+                            if(!ele.absent || !ele.absent.includes('edit')){
+                                params[ele.key] = this.form[ele.key];
+                            }
+                        })
+                        this.$store.dispatch(`${this.module}/update`, {id: this.form.id, params}).then((res) => {
                             this.$formatMessage(res, '编辑资源');
                             this.close(true);
                         })

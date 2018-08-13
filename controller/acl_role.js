@@ -257,7 +257,16 @@ class Role extends BaseComponent{
         }
         try{
             let role = await RoleModel.findOne({id: role_id}, cols);
-            const allows =  await whatResources(role_id);
+            const allows_raw =  await whatResources(role_id);
+            // 转换格式,key值固定
+            let allows = []
+            for (let allow in allows_raw) {
+                allows.push({
+                    resources: allow,
+                    permissions: allows_raw[allow],
+                    key: allow
+                })
+            }
             const {id, name} = role;
             const mix = {id, name, allows};
             res.send({

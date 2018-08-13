@@ -7,7 +7,8 @@
     </div>
 
     <el-dialog :title="$t('common.add') + $t('common.space') + $t('resource.resource')" :visible.sync="dialog.dialogVisible" @open="dialog.contentVisible = true" @closed="dialog.contentVisible = false">
-      <create-resource v-if="dialog.contentVisible" :status="dialog.status" :id="dialog.id" @close="handleClose"></create-resource>
+      <!--<create-resource v-if="dialog.contentVisible" :status="dialog.status" :id="dialog.id" @close="handleClose"></create-resource>-->
+      <modal-custom v-if="dialog.contentVisible" :status="dialog.status" :id="dialog.id" :options="dialog.options" @close="handleClose"></modal-custom>
     </el-dialog>
 
     <table-custom :module="table.module" :cols="table.cols" :btns="table.btns" @operation="handleOperation"></table-custom>
@@ -17,12 +18,12 @@
 <script>
 
     import * as api from '@/services/resource'
-    import createResource from './modal/createResource.vue'
     import tableCustom from '../user/table.vue'
+    import modalCustom from '../modal/modal.vue'
     export default {
         components: {
-            createResource,
-            tableCustom
+            tableCustom,
+            modalCustom
         },
         data () {
             return {
@@ -31,7 +32,36 @@
                     dialogVisible: false,
                     contentVisible: false,
                     status: 'create',
-                    id: ''
+                    id: '',
+                    options: {
+                        rules: {
+                            id: [
+                                {required: true, message: this.$t('validation.require') + this.$t('common.space') + this.$t('resource.id')},
+                                {min: 3, max: 12, message: '3-12' + this.$t('validation.characters')}
+                            ],
+                            name: [
+                                {required: true, message: this.$t('validation.require') + this.$t('common.space') + this.$t('resource.name')},
+                                {min: 3, max: 12, message: '3-12' + this.$t('validation.characters')}
+                            ]
+                        },
+                        elements: [
+                            {
+                                key: 'id',
+                                type: 'text',
+                                label: this.$t('resource.id'),
+                                initValue: '',
+                                disabled: ['edit'],
+                                absent: ['edit']
+                            },
+                            {
+                                key: 'name',
+                                type: 'text',
+                                label: this.$t('resource.name'),
+                                initValue: ''
+                            }
+                        ],
+                        module: 'resource'
+                    }
                 },
                 table: {
                     module: 'resource',

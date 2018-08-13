@@ -7,7 +7,14 @@
     </div>
 
     <el-dialog :title="$t('common.add') + $t('common.space') + $t('role.role')" :visible.sync="dialog.dialogVisible" @open="dialog.contentVisible = true" @closed="dialog.contentVisible = false">
-      <create-role v-if="dialog.contentVisible" :status="dialog.status" :id="dialog.id" @close="handleClose"></create-role>
+      <!--<create-role v-if="dialog.contentVisible" :status="dialog.status" :id="dialog.id" @close="handleClose"></create-role>-->
+
+      <modal-custom v-if="dialog.contentVisible" :status="dialog.status" :id="dialog.id" :options="dialog.options" @close="handleClose">
+        <template slot-scope="slotProps">
+          <role-resource :allows="slotProps.form.allows"></role-resource>
+        </template>
+
+      </modal-custom>
     </el-dialog>
 
     <table-custom :module="table.module" :cols="table.cols" :btns="table.btns" @operation="handleOperation"></table-custom>
@@ -21,10 +28,14 @@ import * as api from '@/services/role'
 import * as api2 from '@/services/resource'
 import createRole from './modal/createRole.vue'
 import tableCustom from '../user/table.vue'
+import modalCustom from '../modal/modal.vue'
+import roleResource from './roleResource.vue'
 export default {
   components: {
       createRole,
-      tableCustom
+      tableCustom,
+      modalCustom,
+      roleResource
   },
   data () {
     return {
@@ -33,7 +44,29 @@ export default {
         dialogVisible: false,
         contentVisible: false,
         status: 'create',
-        id: ''
+        id: '',
+        options: {
+            rules: {
+                name: [
+                    {required: true, message: this.$t('validation.require') + this.$t('common.space') + this.$t('role.name')},
+                    {min: 3, max: 12, message: '3-12' + this.$t('validation.characters')}
+                ]
+            },
+            elements: [
+                {
+                    key: 'name',
+                    type: 'text',
+                    label: this.$t('role.name'),
+                    initValue: ''
+                },
+                {
+                    key: 'allows',
+                    type: 'slot',
+                    initValue: []
+                }
+            ],
+            module: 'role'
+        }
       },
       table: {
           module: 'role',

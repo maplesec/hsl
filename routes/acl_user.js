@@ -28,6 +28,7 @@ async function deleteUser(req, res, next) {
 router.get('/', [authorize('user', 'show')], getUsers);
 router.post('/', [authorize('user', 'operate')], addUser);
 router.post('/login', User.login);
+router.post('/logout', User.logout);
 router.get('/profile', User.getProfile);
 router.get('/:user_id', [authorize('user', 'show')], User.getUserById);
 router.delete('/:user_id', [authorize('user', 'operate')], deleteUser);

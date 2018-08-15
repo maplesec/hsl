@@ -1,27 +1,27 @@
 <template>
   <el-scrollbar wrapClass="scrollbar-wrapper">
     <el-menu default-active="1-4-1" class="el-menu-vertical-demo" @open="handleOpen" @close="handleClose" :collapse="!sidebar.opened">
-      <router-link :to="'/user'">
+      <router-link :to="'/admin/user'">
         <el-menu-item index="2">
           <i class="el-icon-menu"></i>
           <span slot="title">用户</span>
         </el-menu-item>
       </router-link>
-      <router-link :to="'/role'">
+      <router-link :to="'/admin/role'">
         <el-menu-item index="3">
           <i class="el-icon-document"></i>
           <span slot="title">角色</span>
         </el-menu-item>
       </router-link>
-      <router-link :to="'/resource'">
+      <router-link :to="'/admin/resource'">
         <el-menu-item index="4">
           <i class="el-icon-setting"></i>
           <span slot="title">资源</span>
         </el-menu-item>
       </router-link>
-      <router-link :to="'/draft'">
-        <el-menu-item index="4">
-          <i class="el-icon-setting"></i>
+      <router-link :to="'/admin/draft'">
+        <el-menu-item index="5">
+          <i class="el-icon-menu"></i>
           <span slot="title">文章</span>
         </el-menu-item>
       </router-link>

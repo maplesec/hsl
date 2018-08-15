@@ -25,7 +25,7 @@ export const getUserRoles = (id, params) => axios.get(`/acl_user/${id}/roles`, p
 export const login = (params) => axios.post('/acl_user/login', params)
 
 // 登出
-export const logout = () => axios.post('/logout')
+export const logout = () => axios.post('/acl_user/logout')
 
 // 个人信息
 export const profile = () => axios.get('/acl_user/profile');

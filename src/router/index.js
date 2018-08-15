@@ -1,7 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Layout from '@/views/layout/layout'
-import NavComponent from '@/components/NavComponent'
 import store from '@/store'
 import axios from '@/services/axios'
 
@@ -14,47 +13,43 @@ export function createRouter(){
             {
                 path: '/login',
                 name: 'login',
-                component: resolve => require(['@/components/login/index'], resolve)
+                component: resolve => require(['@/views/login/index'], resolve)
             },
             {
-                path: '/table',
-                name: 'table',
-                component: resolve => require(['@/components/table/table'], resolve)
-            },
-            {
-                path: '/',
+                path: '/admin',
                 name: 'layout',
                 component: Layout,
                 redirect: { name: 'user' },
                 children: [
                     {
-                        path: '/user',
-                        name: 'user',
-                        component: resolve => require(['@/components/user/user'], resolve),
-                        meta: {
-                            title: '用户'
-                        }
-                    },
-                    {
-                        path: '/role',
+                        path: 'role',
                         name: 'role',
-                        component: resolve => require(['@/components/role/role'], resolve),
+                        component: resolve => require(['@/views/role/role'], resolve),
                         meta: {
                             title: '角色'
                         }
                     },
                     {
-                        path: '/resource',
+                        path: 'user',
+                        name: 'user',
+                        component: resolve => require(['@/views/user/user'], resolve),
+                        meta: {
+                            title: '用户'
+                        }
+                    },
+
+                    {
+                        path: 'resource',
                         name: 'resource',
-                        component: resolve => require(['@/components/resource/resource'], resolve),
+                        component: resolve => require(['@/views/resource/resource'], resolve),
                         meta: {
                             title: '资源'
                         }
                     },
                     {
-                        path: '/draft',
+                        path: 'draft',
                         name: 'draft',
-                        component: resolve => require(['@/components/draft/draft'], resolve),
+                        component: resolve => require(['@/views/draft/draft'], resolve),
                         meta: {
                             title: '草稿'
                         }
@@ -62,14 +57,14 @@ export function createRouter(){
                 ]
             },
             {
-                path: '/nav',
-                name: 'NavComponent',
-                component: NavComponent
+                path: '/',
+                name: 'root',
+                redirect: { name: 'article'}
             },
             {
                 path: '/article',
                 name: 'article',
-                component: resolve => require(['@/components/article/list'], resolve),
+                component: resolve => require(['@/views/article/list'], resolve),
                 meta: {
                     title: '文章'
                 }
@@ -77,7 +72,7 @@ export function createRouter(){
             {
                 path: '/article/:id',
                 name: 'article-detail',
-                component: resolve => require(['@/components/article/detail'], resolve),
+                component: resolve => require(['@/views/article/detail'], resolve),
                 meta: {
                     title: '文章详情'
                 }

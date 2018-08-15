@@ -19,11 +19,14 @@ export function createApp(){
     // 同步路由状态(route state)到 store
     sync(store, router)
 
-    // axios功能未稳定, 暂不使用路由守卫
-
     router.beforeEach(function(to, from, next) {
-        // TODO: 判断页面是否需要权限,再执行以下代码
-        // 首次打开网页,根据接口判断是否免登陆
+        // 普通页面无需登录
+        if(to.fullPath.indexOf('/admin') !== 0){
+            next();
+            return;
+        }
+        // admin开始的路由，首次打开admin网页,根据接口判断是否免登陆
+        // TODO: 判断具体页面的权限
         if(store.getters['app/profile'].needCheckLogin){
             const profile_api = axios.get('/acl_user/profile');
             (profile_api).then(res => {
@@ -44,7 +47,6 @@ export function createApp(){
             next();
         }
     })
-
 
     const app = new Vue({
         render: h => h(App),

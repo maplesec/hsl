@@ -21,7 +21,6 @@
                 </template>
             </template>
         </el-form>
-        {{rules}}
         <div slot="footer" class="dialog-footer">
             <el-button @click="close(false)">{{$t('common.cancel')}}</el-button>
             <el-button type="primary" v-if="status==='create'" @click="create">{{$t('common.confirm')}}</el-button>

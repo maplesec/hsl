@@ -1,182 +1,91 @@
 <template>
   <div class="app-container calendar-list-container">
-    <div class="filter-container">
-      <el-button class="filter-item" @click="handleCreate" type="primary" icon="el-icon-edit">{{$t('common.add')}}</el-button>
-    </div>
-
-    <el-dialog :title="$t('common.add') + $t('common.space') + $t('user.user')" :visible.sync="dialogFormVisible">
-      <el-form :rules="rules" ref="dataForm" :model="form" label-position="left" label-width="70px" >
-        <el-form-item :label="$t('user.account')" :label-width="formLabelWidth" prop="account">
-          <el-input v-model="form.account" auto-complete="off"></el-input>
-        </el-form-item>
-        <el-form-item :label="$t('user.name')" :label-width="formLabelWidth" prop="name">
-          <el-input v-model="form.name" auto-complete="off"></el-input>
-        </el-form-item>
-        <el-form-item :label="$t('user.password')" :label-width="formLabelWidth" prop="password">
-          <el-input v-model="form.password" auto-complete="off"></el-input>
-        </el-form-item>
-        <el-form-item :label="$t('user.checkPass')" :label-width="formLabelWidth" prop="checkPass">
-          <el-input v-model="form.checkPass" auto-complete="off"></el-input>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogFormVisible = false">{{$t('common.cancel')}}</el-button>
-        <el-button type="primary" v-if="dialogStatus==='create'" @click="createUser">{{$t('common.confirm')}}</el-button>
-        <el-button type="primary" v-if="dialogStatus==='edit'" @click="editUser">{{$t('common.confirm')}}</el-button>
-      </div>
-    </el-dialog>
-
     <el-table
+      v-loading="loading"
       :data="tableData"
+      @sort-change="handleSortChange"
       style="width: 100%">
-      <el-table-column
-        prop="id"
-        label="ID"
-        width="180">
-      </el-table-column>
-      <el-table-column
-        prop="account"
-        :label="$t('user.account')"
-        width="180">
-      </el-table-column>
-      <el-table-column
-        prop="name"
-        :label="$t('user.name')"
-        width="180">
+      <el-table-column v-for="col in cols"
+        :prop="col.prop"
+        :label="col.label"
+        :width="col.width"
+        :sortable="col.sortable"
+        :key="col.prop">
       </el-table-column>
       <el-table-column :label="$t('common.operation')">
         <template slot-scope="scope">
-          <el-button size="mini" @click="handleEdit(scope.row.id)">{{$t('common.edit')}}</el-button>
-          <el-button size="mini" type="danger" @click="handleDelete(scope.row.id)">{{$t('common.delete')}}</el-button>
+          <el-button v-for="btn in btns"
+            size="mini"
+            @click="handleOperation(btn.type, scope.row)"
+            :type="btn.color"
+            :key="btn.type">
+            {{btn.name}}
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
+    <el-pagination
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+      :current-page="pagination.page"
+      :page-sizes="[2, 5, 10, 20]"
+      :page-size="pagination.pageSize"
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="pagination.totalCount">
+    </el-pagination>
   </div>
-
 </template>
 
 <script>
 
-import * as api from '@/services/user'
 export default {
+  props:{
+    module: String,
+    cols: Array,
+    btns: Array
+  },
   data () {
-    const validatePass = (rule, value, callback) => {
-      if (value === '') {
-        callback(new Error(this.$t('validation.pass') + this.$t(rule.field)))
-      } else {
-        if (this.form.checkPass !== '') {
-          this.$refs.dataForm.validateField('checkPass')
-        }
-        callback()
-      }
-    }
-    const validatePass2 = (rule, value, callback) => {
-      if (value === '') {
-        callback(new Error(this.$t('validation.checkPass')))
-      } else if (value !== this.form.password) {
-        callback(new Error(this.$t('validation.passDiff')))
-      } else {
-        callback()
-      }
-    }
     return {
-      tableData: [],
-      dialogFormVisible: false,
-      dialogStatus: '',
-      form: {
-        account: '',
-        name: '',
-        password: '',
-        checkPass: ''
-      },
-      rules: {
-        account: [
-          {required: true, message: this.$t('validation.require') + this.$t('common.space') + this.$t('user.account')},
-          {min: 3, max: 12, message: '3-12' + this.$t('validation.characters')}
-        ],
-        name: [
-          {required: true, message: this.$t('validation.require') + this.$t('common.space') + this.$t('user.name')},
-          {min: 3, max: 12, message: '3-12' + this.$t('validation.characters')}
-        ],
-        password: [
-          {validator: validatePass, trigger: 'blur'}
-        ],
-        checkPass: [
-          {validator: validatePass2, trigger: 'blur'}
-        ]
-      },
-      formLabelWidth: '120px'
+      searchValue: ''
     }
   },
-  created () {
-    this.initTable()
+  computed: {
+    tableData(){
+      return this.$store.state[this.module].list.data;
+    },
+    loading(){
+      return this.$store.state[this.module].list.loading;
+    },
+    pagination() {
+      return this.$store.state[this.module].list.pagination;
+    }
   },
   methods: {
-    initTable () {
-      let service = api.getUserList()
-      service.then((res) => {
-        this.tableData = res.data
+    initTable (isSearch) {
+      this.$store.dispatch(`${this.module}/getList`).then((e) => {
+        //TODO: 出错的提示
+        this.$formatMessage(e, '获取用户列表', 'none');
       })
     },
-    resetForm () {
-      this.form = {
-        name: '',
-        account: ''
+    handleSizeChange (val) {
+      this.$store.dispatch(`${this.module}/setPagination`, {pageSize: val});
+      this.initTable()
+    },
+    handleCurrentChange (val) {
+      this.$store.dispatch(`${this.module}/setPagination`, {page: val});
+      this.initTable()
+    },
+    handleSortChange (val) {
+      this.$store.dispatch(`${this.module}/setPagination`, {sortBy: val.prop});
+      if (val.order) {
+        this.$store.dispatch(`${this.module}/setPagination`, {sort: val.order === 'ascending' ? 'asc' : 'desc'});
+      } else {
+        this.$store.dispatch(`${this.module}/setPagination`, {sort: null});
       }
+      this.initTable()
     },
-    handleCreate () {
-      this.resetForm()
-      this.dialogStatus = 'create'
-      this.dialogFormVisible = true
-      this.$nextTick(() => {
-        this.$refs['dataForm'].clearValidate()
-      })
-    },
-    createUser () {
-      this.$refs['dataForm'].validate((valid) => {
-        if (valid) {
-          const params = {
-            name: this.form.name,
-            account: this.form.account,
-            password: this.form.password
-          }
-          api.addUser(params).then(() => {
-            this.initTable()
-            this.dialogFormVisible = false
-          })
-        }
-      })
-    },
-    handleEdit (id) {
-      api.getUser(id).then((res) => {
-        this.form = res.data || {}
-        this.dialogStatus = 'edit'
-        this.dialogFormVisible = true
-        this.$nextTick(() => {
-          this.$refs['dataForm'].clearValidate()
-        })
-      })
-    },
-    editUser () {
-      this.$refs['dataForm'].validate((valid) => {
-        if (valid) {
-          const params = {
-            name: this.form.name,
-            account: this.form.account,
-            password: this.form.password
-          }
-          api.editUser(this.form.id, params).then(() => {
-            this.initTable()
-            this.dialogFormVisible = false
-          })
-        }
-      })
-    },
-    handleDelete (id, row) {
-      console.log('delete', id, row)
-      api.deleteUser(id).then(() => {
-        this.initTable()
-      })
+    handleOperation(type, row){
+        this.$emit('operation', {type, row});
     }
   }
 }

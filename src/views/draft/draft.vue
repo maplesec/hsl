@@ -13,13 +13,14 @@
 
     <table-custom :module="table.module" :cols="table.cols" :btns="table.btns" @operation="handleOperation"></table-custom>
   </div>
+
 </template>
 
 <script>
 
-    import * as api from '@/services/resource'
-    import tableCustom from '../user/table.vue'
-    import modalCustom from '../modal/modal.vue'
+    import tableCustom from '../../components/table/table.vue'
+    import modalCustom from '../../components/modal/modal.vue'
+
     export default {
         components: {
             tableCustom,
@@ -35,46 +36,34 @@
                     id: '',
                     options: {
                         rules: {
-                            id: [
-                                {required: true, message: this.$t('validation.require') + this.$t('common.space') + this.$t('resource.id')},
-                                {min: 3, max: 12, message: '3-12' + this.$t('validation.characters')}
-                            ],
-                            name: [
-                                {required: true, message: this.$t('validation.require') + this.$t('common.space') + this.$t('resource.name')},
+                            title: [
+                                {required: true, message: this.$t('validation.require') + this.$t('common.space') + this.$t('draft.title')},
                                 {min: 3, max: 12, message: '3-12' + this.$t('validation.characters')}
                             ]
                         },
                         elements: [
                             {
-                                key: 'id',
+                                key: 'title',
                                 type: 'text',
-                                label: this.$t('resource.id'),
-                                initValue: '',
-                                disabled: ['edit'],
-                                absent: ['edit']
+                                label: this.$t('draft.title'),
+                                initValue: ''
                             },
                             {
-                                key: 'name',
+                                key: 'content',
                                 type: 'text',
-                                label: this.$t('resource.name'),
+                                label: this.$t('draft.content'),
                                 initValue: ''
                             }
                         ],
-                        module: 'resource'
+                        module: 'draft'
                     }
                 },
                 table: {
-                    module: 'resource',
+                    module: 'draft',
                     cols: [
                         {
-                            prop: 'id',
-                            label: 'ID',
-                            width: '180',
-                            sortable: 'false'
-                        },
-                        {
-                            prop: 'name',
-                            label: this.$t('resource.name'),
+                            prop: 'title',
+                            label: this.$t('resource.title'),
                             width: '180',
                             sortable: 'custom'
                         },
@@ -114,7 +103,7 @@
                 this.$store.dispatch(`${this.table.module}/getList`).then((e)=>{
                     //TODO: 出错的提示
                     this.$formatMessage(e, '获取用户列表', 'none');
-            })
+                })
             },
             handleSearch () {
                 this.$store.dispatch(`${this.table.module}/setPagination`, {filter: this.searchValue});
@@ -143,14 +132,14 @@
                     type: 'warning'
                 }).then(() => {
                     this.$store.dispatch(`${this.table.module}/delete`, id).then(() => {
-                    this.initTable()
-                this.$message({
-                    type: 'success',
-                    message: '删除成功!'
-                });
-            })
+                        this.initTable()
+                        this.$message({
+                            type: 'success',
+                            message: '删除成功!'
+                        });
+                    })
 
-            }).catch(() => {
+                }).catch(() => {
                     // 取消删除
                 });
             },
@@ -167,3 +156,10 @@
         }
     }
 </script>
+<style>
+  .demo-dynamic .el-input {
+    /*margin-right: 10px;*/
+    /*width: 270px;*/
+    /*vertical-align: top;*/
+  }
+</style>

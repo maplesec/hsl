@@ -4,11 +4,7 @@ import db from './mongodb/db.js';
 import router from './routes/index';
 
 const { createBundleRenderer } = require('vue-server-renderer')
-
-
-
 const app = express();
-
 
 app.use(session({
     name: 'SID',
@@ -23,15 +19,6 @@ app.use(session({
 }))
 
 app.use('/static', express.static('dist/static'));
-
-app.post('/logout', function(req, res){
-    req.session.user_id = null
-    req.session.destroy();
-    res.send({
-        status: 1
-    })
-})
-
 
 //import vueApp from './src/entry-server';
 //const serverRender = require('vue-server-renderer');

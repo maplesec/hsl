@@ -134,6 +134,14 @@ class User extends BaseComponent{
         })
     }
 
+    async logout(req, res, next) {
+        req.session.user_id = null
+        req.session.destroy();
+        res.send({
+            status: 1
+        })
+    }
+
     async getProfile(req, res, next) {
         const user_id = req.session.user_id;
         if(!user_id || !Number(user_id)){

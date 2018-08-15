@@ -32,6 +32,7 @@ export default {
   },
   data () {
     const validatePass = (rule, value, callback) => {
+      console.log("rule",rule)
       if (value === '') {
         callback(new Error(this.$t('validation.pass') + this.$t(rule.field)))
       } else {

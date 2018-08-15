@@ -7,7 +7,12 @@
     </div>
 
     <el-dialog :title="$t('common.add') + $t('common.space') + $t('user.user')" :visible.sync="dialog.dialogVisible" @open="dialog.contentVisible = true" @closed="dialog.contentVisible = false">
-      <create-user v-if="dialog.contentVisible" :status="dialog.status" :id="dialog.id" @close="handleClose"></create-user>
+      <!-- <create-user v-if="dialog.contentVisible" :status="dialog.status" :id="dialog.id" @close="handleClose"></create-user> -->
+      <modal-custom v-if="dialog.contentVisible" :status="dialog.status" :id="dialog.id" :options="dialog.options" @close="handleClose">
+        <template slot-scope="slotProps" slot="selectRoles">
+          <el-transfer v-model="slotProps.form.roles" :data="roleList"></el-transfer>
+        </template>
+      </modal-custom>
     </el-dialog>
 
     <table-custom :module="table.module" :cols="table.cols" :btns="table.btns" @operation="handleOperation"></table-custom>
@@ -20,10 +25,12 @@ import * as api from '@/services/user'
 import * as api2 from '@/services/role'
 import createUser from './modal/createUser.vue'
 import tableCustom from './table.vue'
+import modalCustom from '../modal/modal.vue'
 export default {
   components: {
     createUser,
-    tableCustom
+    tableCustom,
+    modalCustom
   },
   data () {
     return {
@@ -32,7 +39,46 @@ export default {
         dialogVisible: false,
         contentVisible: false,
         status: 'create',
-        id: ''
+        id: '',
+        options: {
+            rules: {
+              account: [
+                {required: true, message: this.$t('validation.require') + this.$t('common.space') + this.$t('user.account')},
+                {min: 3, max: 12, message: '3-12' + this.$t('validation.characters')}
+              ],
+              name: [
+                {required: true, message: this.$t('validation.require') + this.$t('common.space') + this.$t('user.name')},
+                {min: 3, max: 12, message: '3-12' + this.$t('validation.characters')}
+              ]
+            },
+            elements: [
+                {
+                    key: 'account',
+                    type: 'text',
+                    label: this.$t('user.account'),
+                    initValue: ''
+                },
+                {
+                    key: 'name',
+                    type: 'text',
+                    label: this.$t('user.name'),
+                    initValue: ''
+                },
+                {
+                    key: 'password',
+                    type: 'pswdDefine',
+                    label: this.$t('user.password'),
+                    initValue: ''
+                },
+                {
+                    key: 'roles',
+                    type: 'slot',
+                    initValue: [],
+                    slot: 'selectRoles'
+                }
+            ],
+            module: 'user'
+        }
       },
       table: {
           module: 'user',
@@ -68,7 +114,8 @@ export default {
                   color: 'danger'
               }
           ]
-      }
+      },
+      roleList: []
     }
   },
   created () {
@@ -91,6 +138,18 @@ export default {
       this.$store.dispatch(`${this.table.module}/getList`).then((e)=>{
         //TODO: 出错的提示
         this.$formatMessage(e, '获取用户列表', 'none');
+      })
+    },
+    getRoleList () {
+      return this.$store.dispatch('role/getListAll').then((res) => {
+        this.$formatMessage(res, '获取角色列表', this.$showErrorType.none);
+        this.roleList = []
+        res.result.result.forEach((item) => {
+          this.roleList.push({
+            key: item.id.toString(),
+            label: item.name
+          })
+        })
       })
     },
     handleSearch () {

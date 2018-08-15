@@ -10,10 +10,9 @@
       <!--<create-role v-if="dialog.contentVisible" :status="dialog.status" :id="dialog.id" @close="handleClose"></create-role>-->
 
       <modal-custom v-if="dialog.contentVisible" :status="dialog.status" :id="dialog.id" :options="dialog.options" @close="handleClose">
-        <template slot-scope="slotProps">
+        <template slot-scope="slotProps" slot="selectAllows">
           <role-resource :allows="slotProps.form.allows"></role-resource>
         </template>
-
       </modal-custom>
     </el-dialog>
 
@@ -62,7 +61,8 @@ export default {
                 {
                     key: 'allows',
                     type: 'slot',
-                    initValue: []
+                    initValue: [],
+                    slot: 'selectAllows'
                 }
             ],
             module: 'role'

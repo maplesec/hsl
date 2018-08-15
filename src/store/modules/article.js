@@ -10,9 +10,10 @@ const article = {
             pagination: {
                 totalCount: 0,
                 page: 1,
-                pageSize: 5,
+                pageSize: 12,
                 sortBy: '',
-                sort: ''
+                sort: '',
+                filter: ''
             }
         },
         detail: {
@@ -42,9 +43,9 @@ const article = {
         }
     },
     actions: {
-        getList({ commit }, query ){
+        getList({ commit, state }){
             commit('LOADING_lIST');
-            return $doRequest(api.getUserList(query), (formatResponse)=>{
+            return $doRequest(api.getDraftList(state.list.pagination), (formatResponse)=>{
                 commit('SET_lIST', formatResponse);
             })
         },

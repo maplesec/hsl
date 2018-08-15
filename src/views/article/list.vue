@@ -1,87 +1,42 @@
 <template>
-    <div class="app-container calendar-list-container bg-grey">
-
-        <header id="header" class="header bg-white">
-            <div class="navbar-container">
-                <a class="navbar-logo" href="/">
-                    <img src="/static/img/logo.jpg"  alt="Leaf Blog"/>
-                    <span>Leaf Blog</span>
-                </a>
-                <div>
-                    <el-input placeholder="Search..." v-model="searchValue" style="width:200px" class="input-with-select">
-                        <el-button slot="append" icon="el-icon-search" @click="initTable" :loading="loading"></el-button>
-                    </el-input>
-                </div>
-            </div>
-        </header>
-
-
-        <!--<div class="filter-container">-->
-
-        <!--</div>-->
-
-        <div class="main-content">
-            <div class="post-lists">
-                <div class="post-lists-body">
-                    <div class="post-list-item" v-for="(item, index) in tableData" :key="item.id">
-                        <div class="post-list-item-container">
-                            <div class="item-thumb bg-deepgrey" style="background-image:url('/static/img/2.jpg');"></div>
-                            <a style="cursor: pointer;" v-on:click="goDetailPage(item.id)">
-                                <div class="item-desc">
-                                    <p>{{ item.content }}</p>
-                                </div>
-                            </a>
-                            <div class="item-slant reverse-slant bg-deepgrey"></div>
-                            <div class="item-slant"></div>
-                            <div class="item-label">
-                                <div class="item-title"><a v-on:click="goDetailPage(item.id)">{{ item.title }}</a>
-                                </div>
-                                <div class="item-meta clearfix">
-                                    <div class="item-meta-ico bg-ico-link"
-                                         style="background: url('/static/img/bg-ico.png') no-repeat;background-size: 40px auto;"></div>
-                                    <div class="item-meta-cat">
-                                        <a>this is category</a>
-                                    </div>
+    <div class="main-content">
+        <div class="post-lists">
+            <div class="post-lists-body">
+                <div class="post-list-item" v-for="(item, index) in tableData" :key="item.id">
+                    <div class="post-list-item-container">
+                        <div class="item-thumb bg-deepgrey" style="background-image:url('/static/img/2.jpg');"></div>
+                        <a style="cursor: pointer;" v-on:click="goDetailPage(item.id)">
+                            <div class="item-desc">
+                                <p>{{ item.content }}</p>
+                            </div>
+                        </a>
+                        <div class="item-slant reverse-slant bg-deepgrey"></div>
+                        <div class="item-slant"></div>
+                        <div class="item-label">
+                            <div class="item-title"><a v-on:click="goDetailPage(item.id)">{{ item.title }}</a>
+                            </div>
+                            <div class="item-meta clearfix">
+                                <div class="item-meta-ico bg-ico-link"
+                                     style="background: url('/static/img/bg-ico.png') no-repeat;background-size: 40px auto;"></div>
+                                <div class="item-meta-cat">
+                                    <a>this is category</a>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <el-pagination
-                    @size-change="handleSizeChange"
-                    @current-change="handleCurrentChange"
-                    :current-page="pagination.page"
-                    :page-sizes="[2, 5, 10, 20]"
-                    :page-size="pagination.pageSize"
-                    layout="total, prev, pager, next, jumper"
-                    :total="pagination.totalCount">
-            </el-pagination>
         </div>
-
-
-        <footer id="footer" class="footer bg-white">
-            <div class="footer-meta">
-                <div class="footer-container">
-                    <div class="meta-item meta-copyright">
-                        <div class="meta-copyright-info">
-                            <a href="/" class="info-logo">
-                                <img src="/static/img/logo.jpg" alt="maple's blog">
-                            </a>
-                            <div class="info-text">
-                                <p>Powered by <a href="https://github.com/maplesec/hsl" target="_blank" rel="nofollow">leaf-blog</a>
-                                </p>
-                                <p>&copy; 2018 <a href="https://github.com/maplesec">maplesec</a></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </footer>
-
-
+        <el-pagination
+                @size-change="handleSizeChange"
+                @current-change="handleCurrentChange"
+                :current-page="pagination.page"
+                :page-sizes="[12, 24]"
+                :page-size="pagination.pageSize"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="pagination.totalCount">
+        </el-pagination>
     </div>
-
 </template>
 
 <script>
@@ -91,63 +46,47 @@
     export default {
         data () {
             return {
-                tableData: [],
-                pagination: {
-                    totalCount: 0,
-                    page: 1,
-                    pageSize: 12,
-                    sortBy: '',
-                    sort: ''
-                },
-                searchValue: '',
-                loading: true,
+                module: 'article'
+            }
+        },
+        computed: {
+            tableData(){
+                return this.$store.state[this.module].list.data;
+            },
+            loading(){
+                return this.$store.state[this.module].list.loading;
+            },
+            pagination() {
+                return this.$store.state[this.module].list.pagination;
             }
         },
         created () {
             this.initTable()
         },
+        asyncData({store}){
+            return store.dispatch(`${this.module}/getList`)
+        },
         methods: {
             initTable (isSearch) {
-                this.loading = true
-                if (isSearch) {
-                    this.pagination.page = 1
-                }
-                const query = {
-                    page: this.pagination.page,
-                    pageSize: this.pagination.pageSize,
-                    filter: this.searchValue,
-                    sortBy: this.pagination.sortBy,
-                    sort: this.pagination.sort
-                }
-                this.$doRequest(api.getDraftList(query), '获取文章列表', this.$showErrorType.none).then((res) => {
-                    setTimeout(() => {
-                        this.loading = false
-                    }, 200)
-                    this.tableData = res.result
-                    this.pagination.totalCount = res.totalCount
-                }, (err) => {
-                    if (err) {
-                        console.log(err)
-                    }
-                    setTimeout(() => {
-                        this.loading = false
-                    }, 200)
+                this.$store.dispatch(`${this.module}/getList`).then((e) => {
+                    //TODO: 出错的提示
+                    this.$formatMessage(e, '获取用户列表', 'none');
                 })
             },
             handleSizeChange (val) {
-                this.pagination.pageSize = val
+                this.$store.dispatch(`${this.module}/setPagination`, {pageSize: val});
                 this.initTable()
             },
             handleCurrentChange (val) {
-                this.pagination.page = val
+                this.$store.dispatch(`${this.module}/setPagination`, {page: val});
                 this.initTable()
             },
             handleSortChange (val) {
-                this.pagination.sortBy = val.prop
+                this.$store.dispatch(`${this.module}/setPagination`, {sortBy: val.prop});
                 if (val.order) {
-                    this.pagination.sort = val.order === 'ascending' ? 'asc' : 'desc'
+                    this.$store.dispatch(`${this.module}/setPagination`, {sort: val.order === 'ascending' ? 'asc' : 'desc'});
                 } else {
-                    this.pagination.sort = null
+                    this.$store.dispatch(`${this.module}/setPagination`, {sort: null});
                 }
                 this.initTable()
             },

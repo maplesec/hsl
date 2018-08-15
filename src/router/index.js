@@ -1,8 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Layout from '@/views/layout/layout'
-import store from '@/store'
-import axios from '@/services/axios'
+import Customer from '@/views/customer/customer'
 
 Vue.use(Router)
 
@@ -63,20 +62,29 @@ export function createRouter(){
             },
             {
                 path: '/article',
-                name: 'article',
-                component: resolve => require(['@/views/article/list'], resolve),
-                meta: {
-                    title: '文章'
-                }
+                name: 'customer',
+                component: Customer,
+                redirect: { name: 'article' },
+                children: [
+                    {
+                        path: '/article',
+                        name: 'article',
+                        component: resolve => require(['@/views/article/list'], resolve),
+                        meta: {
+                            title: '文章'
+                        }
+                    },
+                    {
+                        path: '/article/:id',
+                        name: 'article-detail',
+                        component: resolve => require(['@/views/article/detail'], resolve),
+                        meta: {
+                            title: '文章详情'
+                        }
+                    }
+                ]
             },
-            {
-                path: '/article/:id',
-                name: 'article-detail',
-                component: resolve => require(['@/views/article/detail'], resolve),
-                meta: {
-                    title: '文章详情'
-                }
-            }
+
         ]
     })
 

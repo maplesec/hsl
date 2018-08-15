@@ -96,13 +96,7 @@
             this.initTable()
         },
         asyncData({store}){
-            return store.dispatch(`${this.table.module}/getList`, {
-                page: 1,
-                pageSize: 5,
-                filter: '',
-                sortBy: '',
-                sort: ''
-            })
+            return store.dispatch(`${this.table.module}/getList`)
         },
         methods: {
             initTable (isSearch) {

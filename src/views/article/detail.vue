@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="main-content">
     <div>{{title}}</div>
     <div v-html="content"></div>
   </div>

@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import acl from 'acl';
 import init from '../initdata/init';
 let url = "mongodb://localhost/test";
+// let url = "mongodb://test:test@localhost/test";
 mongoose.connect(url);
 
 const db = mongoose.connection;

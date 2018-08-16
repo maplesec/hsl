@@ -21,7 +21,7 @@ export function createRouter(){
                 redirect: { name: 'user' },
                 children: [
                     {
-                        path: 'role',
+                        path: '/admin/role',
                         name: 'role',
                         component: resolve => require(['@/views/role/role'], resolve),
                         meta: {
@@ -29,7 +29,7 @@ export function createRouter(){
                         }
                     },
                     {
-                        path: 'user',
+                        path: '/admin/user',
                         name: 'user',
                         component: resolve => require(['@/views/user/user'], resolve),
                         meta: {
@@ -38,7 +38,7 @@ export function createRouter(){
                     },
 
                     {
-                        path: 'resource',
+                        path: '/admin/resource',
                         name: 'resource',
                         component: resolve => require(['@/views/resource/resource'], resolve),
                         meta: {
@@ -46,7 +46,7 @@ export function createRouter(){
                         }
                     },
                     {
-                        path: 'draft',
+                        path: '/admin/draft',
                         name: 'draft',
                         component: resolve => require(['@/views/draft/draft'], resolve),
                         meta: {

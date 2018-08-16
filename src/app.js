@@ -30,9 +30,10 @@ export function createApp(){
         if(store.getters['app/profile'].needCheckLogin){
             const profile_api = axios.get('/acl_user/profile');
             (profile_api).then(res => {
-                console.log(JSON.stringify(res))
+                // console.log(JSON.stringify(res))
                 if (res.data && res.data && res.data.status === 1) {
                     store.dispatch('app/setProfile', res.data.response);
+                    store.dispatch('app/checkLogin')
                     next();
                 } else {
                     console.log('next1')
@@ -42,7 +43,6 @@ export function createApp(){
                 console.log('next2')
                 next('/login');
             })
-            store.dispatch('app/checkLogin')
         }else{
             next();
         }

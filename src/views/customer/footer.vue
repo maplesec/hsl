@@ -5,7 +5,7 @@
                 <div class="meta-item meta-copyright">
                     <div class="meta-copyright-info">
                         <a href="/" class="info-logo">
-                            <img src="/static/img/logo.jpg" alt="maple's blog">
+                            <img src="/static/logo/logo.jpg" alt="maple's blog">
                         </a>
                         <div class="info-text">
                             <p>Powered by <a href="https://github.com/maplesec/hsl" target="_blank" rel="nofollow">leaf-blog</a>

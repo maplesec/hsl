@@ -2,7 +2,7 @@
     <div class="main-content">
         <div class="post-lists">
             <div class="post-lists-body">
-                <div class="post-list-item" v-for="(item, index) in tableData" :key="item.id">
+                <div class="post-list-item" v-for="(item) in tableData" :key="item.id">
                     <div class="post-list-item-container">
                         <div class="item-thumb bg-deepgrey" style="background-image:url('/static/img/2.jpg');"></div>
                         <a style="cursor: pointer;" v-on:click="goDetailPage(item.id)">
@@ -42,11 +42,11 @@
 <script>
 
     import * as api from '@/services/draft'
-
+    const module = 'article'
     export default {
         data () {
             return {
-                module: 'article'
+                module: module
             }
         },
         computed: {
@@ -64,29 +64,29 @@
             this.initTable()
         },
         asyncData({store}){
-            return store.dispatch(`${this.module}/getList`)
+            return store.dispatch(`${module}/getList`)
         },
         methods: {
             initTable (isSearch) {
-                this.$store.dispatch(`${this.module}/getList`).then((e) => {
+                this.$store.dispatch(`${module}/getList`).then((e) => {
                     //TODO: 出错的提示
                     this.$formatMessage(e, '获取用户列表', 'none');
                 })
             },
             handleSizeChange (val) {
-                this.$store.dispatch(`${this.module}/setPagination`, {pageSize: val});
+                this.$store.dispatch(`${module}/setPagination`, {pageSize: val});
                 this.initTable()
             },
             handleCurrentChange (val) {
-                this.$store.dispatch(`${this.module}/setPagination`, {page: val});
+                this.$store.dispatch(`${module}/setPagination`, {page: val});
                 this.initTable()
             },
             handleSortChange (val) {
-                this.$store.dispatch(`${this.module}/setPagination`, {sortBy: val.prop});
+                this.$store.dispatch(`${module}/setPagination`, {sortBy: val.prop});
                 if (val.order) {
-                    this.$store.dispatch(`${this.module}/setPagination`, {sort: val.order === 'ascending' ? 'asc' : 'desc'});
+                    this.$store.dispatch(`${module}/setPagination`, {sort: val.order === 'ascending' ? 'asc' : 'desc'});
                 } else {
-                    this.$store.dispatch(`${this.module}/setPagination`, {sort: null});
+                    this.$store.dispatch(`${module}/setPagination`, {sort: null});
                 }
                 this.initTable()
             },

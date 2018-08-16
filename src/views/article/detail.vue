@@ -28,8 +28,8 @@ export default {
         this.$formatMessage(e, '获取文章详情');
     });
   },
-  asyncData({store}){
-    return store.dispatch('article/getArticle', this.$route.params.id);
+  asyncData({store, route}){
+    return store.dispatch('article/getArticle', route.params.id);
   },
   methods: {
 

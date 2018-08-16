@@ -2,7 +2,7 @@
     <header id="header" class="header bg-white">
         <div class="navbar-container">
             <a class="navbar-logo" href="/">
-                <img src="/static/img/logo.jpg"  alt="Leaf Blog"/>
+                <img src="/static/logo/leaf.png"  alt="Leaf Blog"/>
                 <span>Leaf Blog</span>
             </a>
             <div>
@@ -19,7 +19,7 @@
         data () {
             return {
                 searchValue: '',
-                module: 'draft'
+                module: 'article'
             }
         },
         computed: {

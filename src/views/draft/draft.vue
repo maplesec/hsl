@@ -20,7 +20,7 @@
 
     import tableCustom from '../../components/table/table.vue'
     import modalCustom from '../../components/modal/modal.vue'
-
+    const module = 'draft'
     export default {
         components: {
             tableCustom,
@@ -55,11 +55,11 @@
                                 initValue: ''
                             }
                         ],
-                        module: 'draft'
+                        module: module
                     }
                 },
                 table: {
-                    module: 'draft',
+                    module: module,
                     cols: [
                         {
                             prop: 'title',
@@ -87,20 +87,20 @@
             this.initTable()
         },
         asyncData({store}){
-            return store.dispatch(`${this.table.module}/getList`)
+            return store.dispatch(`${module}/getList`)
         },
         methods: {
             initTable (isSearch) {
                 if (isSearch) {
-                    this.$store.dispatch(`${this.table.module}/setPagination`, {page: 1});
+                    this.$store.dispatch(`${module}/setPagination`, {page: 1});
                 }
-                this.$store.dispatch(`${this.table.module}/getList`).then((e)=>{
+                this.$store.dispatch(`${module}/getList`).then((e)=>{
                     //TODO: 出错的提示
                     this.$formatMessage(e, '获取用户列表', 'none');
                 })
             },
             handleSearch () {
-                this.$store.dispatch(`${this.table.module}/setPagination`, {filter: this.searchValue});
+                this.$store.dispatch(`${module}/setPagination`, {filter: this.searchValue});
                 this.initTable();
             },
             handleCreate () {
@@ -125,7 +125,7 @@
                     cancelButtonText: '取消',
                     type: 'warning'
                 }).then(() => {
-                    this.$store.dispatch(`${this.table.module}/delete`, id).then(() => {
+                    this.$store.dispatch(`${module}/delete`, id).then(() => {
                         this.initTable()
                         this.$message({
                             type: 'success',

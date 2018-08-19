@@ -6,6 +6,10 @@
                 <el-form-item v-if="ele.type==='text'" :key="ele.key" :label="ele.label" :label-width="formLabelWidth" :prop="ele.key">
                     <el-input v-model="form[ele.key]" auto-complete="off" :disabled="ele.disabled ? ele.disabled.includes(status) : false"></el-input>
                 </el-form-item>
+                <!-- 文本域 -->
+                <el-form-item v-if="ele.type==='textarea'" :key="ele.key" :label="ele.label" :label-width="formLabelWidth" :prop="ele.key">
+                    <el-input type="textarea" v-model="form[ele.key]" auto-complete="off" :disabled="ele.disabled ? ele.disabled.includes(status) : false"></el-input>
+                </el-form-item>
                 <!-- 插槽类型 -->
                 <template v-if="ele.type==='slot'">
                     <slot :name="ele.slot" v-bind:form="form"></slot>

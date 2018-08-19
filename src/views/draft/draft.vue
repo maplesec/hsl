@@ -50,7 +50,7 @@
                             },
                             {
                                 key: 'content',
-                                type: 'text',
+                                type: 'textarea',
                                 label: this.$t('draft.content'),
                                 initValue: ''
                             }

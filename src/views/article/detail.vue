@@ -75,20 +75,20 @@ export default {
   h4,
   h5,
   h6 {
-    color: #859900;
+    color: #000;
   }
   h1 {
     font-size: 2.8em;
-    color: #d33682;
+    color: #000;
   }
   h2 {
     font-size: 2.4em;
-    color: #9B31EA;
+    color: #000;
 
   }
   h3 {
     font-size: 1.8em;
-    color: #338000;
+    color: #000;
   }
   h4 {
     font-size: 1.4em;

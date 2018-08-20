@@ -7,7 +7,7 @@
             </a>
             <div>
                 <el-input placeholder="Search..." v-model="searchValue" style="width:200px" class="input-with-select">
-                    <el-button slot="append" icon="el-icon-search" @click="handleSearch()" :loading="loading"></el-button>
+                    <el-button slot="append" icon="el-icon-search" @click="handleSearch()"></el-button>
                 </el-input>
             </div>
         </div>

@@ -4,6 +4,8 @@ import BaseComponent from '../prototype/baseComponent'
 import CategoryModel from '../models/category'
 import formidable from 'formidable'
 
+const cols = 'id name style'
+
 class Category extends BaseComponent{
     constructor(){
         super()
@@ -11,14 +13,13 @@ class Category extends BaseComponent{
 
     /**
      * 分页获取类别
-     * @param req
-     * @param res
-     * @param next
-     * @returns {Promise.<void>}
+     * @param {*} page 
+     * @param {*} pageSize 
+     * @param {*} filter 
+     * @param {*} sort 
+     * @param {*} sortBy 
      */
-
-    async getCategory(req, res, next){
-        const {page, pageSize, filter = '', sort = 'desc', sortBy = ''} = req.query;
+    async getList(page, pageSize, filter, sort, sortBy) {
         let sortObj = {'id': -1}
         try {
             if (page && pageSize) {
@@ -71,6 +72,37 @@ class Category extends BaseComponent{
         } catch (err) {
             console.log('getCategory', err.message)
             res.send({
+                status: 0,
+                type: 'ERROR_DB',
+                message: err.message
+            })
+        }
+    }
+
+
+    // async getCategory(req, res, next){
+    //     const {page, pageSize, filter = '', sort = 'desc', sortBy = ''} = req.query;
+        
+    // }
+
+    async getById(id){
+        if(!id || !Number(id)){
+            return({
+                status: 0,
+                type: 'ERROR_PARAMS',
+                message: 'invalid id'
+            })
+        }
+        try{
+            const object = await DraftModel.findOne({id: id}, cols);
+            return({
+                status: 1,
+                type: 'SUCCESS',
+                response: object
+            });
+        }catch(err){
+            console.log('getDraftById', err.message);
+            return({
                 status: 0,
                 type: 'ERROR_DB',
                 message: err.message

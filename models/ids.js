@@ -7,7 +7,8 @@ const idsSchema = new mongoose.Schema({
     resource_id: Number,
     role_id: Number,
     user_id: Number,
-    draft_id: Number
+    draft_id: Number,
+    category_id: Number,
 });
 
 const Ids = mongoose.model('Ids', idsSchema);
@@ -19,7 +20,8 @@ Ids.findOne((err,data) => {
             resource_id: 0,
             role_id: 0,
             user_id: 0,
-            draft_id: 0
+            draft_id: 0,
+            category_id: 0,
         })
         newIds.save();
     }

@@ -67,6 +67,18 @@
                             width: '180',
                             sortable: 'custom'
                         },
+                        {
+                            prop: 'createTime',
+                            label: this.$t('resource.createTime'),
+                            width: '180',
+                            sortable: 'custom'
+                        },
+                        {
+                            prop: 'lastEditTime',
+                            label: this.$t('resource.lastEditTime'),
+                            width: '180',
+                            sortable: 'custom'
+                        },
                     ],
                     btns: [
                         {

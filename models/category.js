@@ -6,7 +6,8 @@ const Schema = mongoose.Schema;
 
 const categorySchema =  new Schema({
     id: String,
-    name: String
+    name: String,
+    style: String,
 })
 
 categorySchema.index({id: 1});

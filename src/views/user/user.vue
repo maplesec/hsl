@@ -10,7 +10,7 @@
       <!-- <create-user v-if="dialog.contentVisible" :status="dialog.status" :id="dialog.id" @close="handleClose"></create-user> -->
       <modal-custom v-if="dialog.contentVisible" :status="dialog.status" :id="dialog.id" :options="dialog.options" @close="handleClose">
         <template slot-scope="slotProps" slot="selectRoles">
-          <el-transfer v-model="slotProps.form.roles" :data="roleList"></el-transfer>
+          <transfer v-model="slotProps.form.roles"></transfer>
         </template>
       </modal-custom>
     </el-dialog>
@@ -23,11 +23,13 @@
 
     import tableCustom from '../../components/table/table.vue'
     import modalCustom from '../../components/modal/modal.vue'
+    import transfer from './transfer.vue'
     const module = 'user'
     export default {
         components: {
             tableCustom,
-            modalCustom
+            modalCustom,
+            transfer
         },
         data () {
             return {

@@ -68,13 +68,13 @@ class Role extends BaseComponent{
 
     /**
      * 分页获取角色
-     * @param req
-     * @param res
-     * @param next
-     * @returns {Promise.<void>}
+     * @param {*} page 
+     * @param {*} pageSize 
+     * @param {*} filter 
+     * @param {*} sort 
+     * @param {*} sortBy 
      */
-    async getRole(req,res,next){
-        const {page, pageSize, filter = '', sort = 'desc', sortBy = ''} = req.query;
+    async getRole(page, pageSize, filter, sort, sortBy) {
         let sortObj = {'id': -1}
         try {
             if (page && pageSize) {
@@ -89,12 +89,11 @@ class Role extends BaseComponent{
                 sortObj[sortBy] = sort === 'asc' ? 1 : -1;
             }
         } catch (err) {
-            res.send({
+            return({
                 status: 0,
                 type: 'ERROR_PARAMS',
                 message: err.message
             })
-            return
         }
         try {
             const offset = (page - 1) * pageSize;
@@ -116,7 +115,7 @@ class Role extends BaseComponent{
             }
             const totalCount = await actionCount;
             const result = await action;
-            res.send({
+            return({
                 status: 1,
                 type: 'SUCCESS',
                 response: {
@@ -126,7 +125,7 @@ class Role extends BaseComponent{
             })
         } catch (err) {
             console.log('getRole', err.message)
-            res.send({
+            return({
                 status: 0,
                 type: 'ERROR_DB',
                 message: err.message
@@ -134,12 +133,12 @@ class Role extends BaseComponent{
         }
     }
 
+    
+
     /**
      * 新增角色
-     * @param req
-     * @param res
-     * @param next
-     * @returns {Promise.<void>}
+     * @param {*} name 
+     * @param {*} allows 
      */
     async addRole(name, allows){
         try{
@@ -200,20 +199,15 @@ class Role extends BaseComponent{
 
     /**
      * 删除角色
-     * @param req
-     * @param res
-     * @param next
-     * @returns {Promise.<void>}
+     * @param {*} role_id 
      */
-    async deleteRole(req, res, next){
-        const {role_id} = req.params;
+    async deleteRole(role_id) {
         if(!role_id || !Number(role_id)){
-            res.send({
+            return({
                 status: 0,
                 type: 'ERROR_PARAMS',
                 message: 'invalid role_id',
             })
-            return;
         }
         try{
             await RoleModel.findOneAndRemove({id: role_id});
@@ -224,13 +218,13 @@ class Role extends BaseComponent{
             });
             await removeAllow(role_id, resources);
             await removeRole(role_id);
-            res.send({
+            return({
                 status: 1,
                 success: 'SUCCESS'
             })
         }catch (err){
             console.log('deleteRole', err);
-            res.send({
+            return({
                 status: 0,
                 type: 'ERROR_DB',
                 message: err.message
@@ -238,22 +232,19 @@ class Role extends BaseComponent{
         }
     }
 
+    
+
     /**
      * 获取单个角色, 及对应资源信息
-     * @param req
-     * @param res
-     * @param next
-     * @returns {Promise.<void>}
+     * @param {*} role_id 
      */
-    async getRoleById(req, res, next){
-        const role_id = req.params.role_id;
+    async getRoleById(role_id){
         if(!role_id || !Number(role_id)){
-            res.send({
+            return({
                 status: 0,
                 type: 'ERROR_PARAMS',
                 message: 'invalid role_id'
             })
-            return
         }
         try{
             let role = await RoleModel.findOne({id: role_id}, cols);
@@ -269,14 +260,14 @@ class Role extends BaseComponent{
             }
             const {id, name} = role;
             const mix = {id, name, allows};
-            res.send({
+            return({
                 status: 1,
                 type: 'SUCCESS',
                 response: mix
             });
         }catch(err){
             console.log('getRoleById', err.message);
-            res.send({
+            return({
                 status: 0,
                 type: 'ERROR_DB',
                 message: err.message
@@ -284,75 +275,71 @@ class Role extends BaseComponent{
         }
     }
 
+    
+
     /**
      * 更新角色
-     * @param req
-     * @param res
-     * @param next
-     * @returns {Promise.<void>}
+     * @param {*} role_id 
+     * @param {*} name 
+     * @param {*} allows 
      */
-    async updateRole(req, res, next){
-        const role_id = req.params.role_id;
-        const form = new formidable.IncomingForm();
-        form.parse(req, async(err, fields, files) => {
-            const {name, allows} = fields;
-            try{
-                if(!role_id || !Number(role_id)){
-                    throw new Error('role_id is invalid')
-                }
-                if(allows){
-                    //校验是否符合规范
-                    if (typeof(allows) !== 'object') {
-                        throw new Error('allows is not object')
-                    } else {
-                        allows.forEach(function(allow){
-                            if(!allow.resources){
-                                throw new Error('resources is invalid')
-                            }
-                            if(!allow.permissions){
-                                throw new Error('permissions is invalid')
-                            }
-                        })
-                    }
-                }
-            }catch(err){
-                res.send({
-                    status: 0,
-                    type: 'ERROR_PARAMS',
-                    message: err.message
-                })
+    async updateRole(role_id, name, allows){
+        try{
+            if(!role_id || !Number(role_id)){
+                throw new Error('role_id is invalid')
             }
-            try{
-                let newRole = {}
-                if (name) {
-                    newRole['name'] = name;
-                }
-                await RoleModel.update({id: role_id}, newRole)
-                if (allows) {
-                    const old_resource_list = await ResourceModel.find();
-                    let old_resources = [];
-                    old_resource_list.forEach(function(item){
-                        old_resources.push(item.id);
+            if(allows){
+                //校验是否符合规范
+                if (typeof(allows) !== 'object') {
+                    throw new Error('allows is not object')
+                } else {
+                    allows.forEach(function(allow){
+                        if(!allow.resources){
+                            throw new Error('resources is invalid')
+                        }
+                        if(!allow.permissions){
+                            throw new Error('permissions is invalid')
+                        }
                     })
-                    await removeAllow(role_id, old_resources);
-                    await allow([{
-                        roles: [role_id],
-                        allows
-                    }])
                 }
-                res.send({
-                    status: 1,
-                    success: 'SUCCESS'
-                })
-            }catch(err){
-                console.log('updateRole', err.message);
-                res.send({
-                    status: 0,
-                    type: 'ERROR_DB',
-                    message: err.message
-                })
             }
-        })
+        }catch(err){
+            return({
+                status: 0,
+                type: 'ERROR_PARAMS',
+                message: err.message
+            })
+        }
+        try{
+            let newRole = {}
+            if (name) {
+                newRole['name'] = name;
+            }
+            await RoleModel.update({id: role_id}, newRole)
+            if (allows) {
+                const old_resource_list = await ResourceModel.find();
+                let old_resources = [];
+                old_resource_list.forEach(function(item){
+                    old_resources.push(item.id);
+                })
+                await removeAllow(role_id, old_resources);
+                await allow([{
+                    roles: [role_id],
+                    allows
+                }])
+            }
+            return({
+                status: 1,
+                success: 'SUCCESS'
+            })
+        }catch(err){
+            console.log('updateRole', err.message);
+            return({
+                status: 0,
+                type: 'ERROR_DB',
+                message: err.message
+            })
+        }
     }
 
     // 待定
@@ -371,180 +358,23 @@ class Role extends BaseComponent{
             }
         }catch(err){
             console.log(err.message);
-            res.send({
+            return({
                 status: 0,
                 type: 'GET_WRONG_PARAM',
                 message: err.message
             })
-            return
         }
         try{
             const _result = await _f(role_id);
-            res.send(_result);
+            return(_result);
         }
         catch(err){
             console.log('获取角色用户失败', err);
-            res.send({
+            return({
                 type: 'ERROR_GET_ROLE_USER',
                 message: '获取角色用户失败'
             })
         }
-    }
-
-    // 已停用, 被其他函数代替
-    async allow(req, res, next){
-        const role_id = req.params.role_id;
-        const form = new formidable.IncomingForm();
-        const _f = function(resources, permissions){
-            return new Promise(function(resolve, reject){
-                global.acl.allow(role_id, resources, permissions, function(err){
-                    resolve(err);
-                })
-            })
-        }
-        form.parse(req, async(err, fields, files) => {
-            const {resources} = fields;
-            let {permissions} = fields;
-            try{
-                if(!resources){
-                    throw new Error('参数错误')
-                }
-                if(!permissions){
-                    permissions = '*';
-                }
-            }catch(err){
-                console.log(err.message);
-                res.send({
-                    status: 0,
-                    type: 'GET_WRONG_PARAM',
-                    message: err.message
-                })
-                return
-            }
-
-            try{
-                const allow_result = await _f(resources, permissions);
-                res.send({
-                    status: 1,
-                    success: '角色赋权成功'
-                })
-            }
-            catch(err){
-                res.send({
-                    status: 0,
-                    type: 'GET_WRONG_PARAM',
-                    message: '角色赋权失败'
-                })
-            }
-        })
-    }
-
-    // 已停用, 被其他函数代替
-    async removeAllow(req, res, next){
-        const role_id = req.params.role_id;
-        const form = new formidable.IncomingForm();
-        const _f = function(resources, permissions){
-            return new Promise(function(resolve, reject){
-                global.acl.removeAllow(role_id, resources, permissions, function(err){
-                    resolve(err);
-                })
-            })
-        }
-        form.parse(req, async(err, fields, files) => {
-            const {resources} = fields;
-            let {permissions} = fields;
-            try{
-                if(!resources){
-                    throw new Error('参数错误')
-                }
-                if(!permissions){
-                    permissions = '*';
-                }
-            }catch(err){
-                console.log(err.message);
-                res.send({
-                    status: 0,
-                    type: 'GET_WRONG_PARAM',
-                    message: err.message
-                })
-                return
-            }
-
-            try{
-                const allow_result = await _f(resources, permissions);
-                res.send({
-                    status: 1,
-                    success: '角色赋权成功'
-                })
-            }
-            catch(err){
-                res.send({
-                    status: 0,
-                    type: 'GET_WRONG_PARAM',
-                    message: '角色赋权失败'
-                })
-            }
-        })
-    }
-
-    // 已停用, 被其他函数代替
-    async setAllow(req, res, next) {
-        const role_id = req.params.role_id;
-        const form = new formidable.IncomingForm();
-        const _f1 = function(resources, permissions){
-            return new Promise(function(resolve, reject){
-                global.acl.removeAllow(role_id, resources, permissions, function(err){
-                    resolve(err);
-                })
-            })
-        }
-        const _f2 = function(resources, permissions){
-            return new Promise(function(resolve, reject){
-                global.acl.allow(role_id, resources, permissions, function(err){
-                    resolve(err);
-                })
-            })
-        }
-        form.parse(req, async(err, fields, files) => {
-            const {resources} = fields;
-            let {permissions} = fields;
-            try{
-                if(!resources){
-                    throw new Error('参数错误')
-                }
-                if(!permissions){
-                    permissions = '*';
-                }
-            }catch(err){
-                console.log(err.message);
-                res.send({
-                    status: 0,
-                    type: 'GET_WRONG_PARAM',
-                    message: err.message
-                })
-                return
-            }
-            try{
-                const old_resource_list = await ResourceModel.find();
-                let old_resources = [];
-                old_resource_list.forEach(function(item){
-                    old_resources.push(item.id);
-                })
-                await _f1(old_resources, permissions);
-                await _f2(resources, permissions)
-                res.send({
-                    status: 1,
-                    success: '角色赋权成功'
-                })
-            }
-            catch(err){
-                res.send({
-                    status: 0,
-                    type: 'GET_WRONG_PARAM',
-                    message: err.message
-                })
-            }
-        })
     }
 }
 export default new Role()

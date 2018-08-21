@@ -3,7 +3,6 @@
 import BaseComponent from '../prototype/baseComponent'
 import UserModel from '../models/acl_user'
 import ResourceModel from '../models/acl_resource'
-import RoleModel from '../models/acl_role'
 import formidable from 'formidable'
 
 const cols = 'id name account'

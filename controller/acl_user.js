@@ -36,9 +36,13 @@ function userRoles(user_id){
 
 function addUserRoles(user_id, roles_to_add){
     return new Promise(function(resolve,reject){
+        if(!roles_to_add.length){
+            resolve();
+        }
         global.acl.addUserRoles(user_id.toString(), roles_to_add, function(err){
             if(err){
-                reject({message: 'addUserRoles failed'})
+                console.log('addUserRoles failed:' + err)
+                reject({message: 'addUserRoles failed:' + err})
             }else{
                 resolve();
             }
@@ -68,89 +72,82 @@ class User extends BaseComponent{
         super()
         this.addUser = this.addUser.bind(this);
     }
-    async login(req, res, next) {
-        const form = new formidable.IncomingForm();
-        form.parse(req, async (err, fields, files) => {
-            const {account, password} = fields;
-            try {
-                if (!account) {
-                    throw new Error('account is required');
-                } else if (!password) {
-                    throw new Error('password is required');
-                }
-            }catch (err) {
-                res.send({
-                    status: 0,
-                    type: 'ERROR_PARAMS',
-                    message: err.message
-                })
-                return
-            }
-            try {
-                const user_obj = await UserModel.findOne({account, password});
-                if (user_obj) {
-                    // 登陆成功
-                    const {name, account} = user_obj;
-                    const id = user_obj.id.toString();
-                    const resourceList = await ResourceModel.find();
-                    let resources = [];
-                    resourceList.forEach(function(item){
-                        resources.push(item.id);
-                    });
-                    const permissions = await allowedPermissions(id, resources);
-                    const roles = await userRoles(id);
-                    const mix = { id, name, account, permissions, roles };
-                    req.session.user_id = id;
-                    res.send({
-                        status: 1,
-                        type: 'SUCCESS',
-                        response: mix
-                    });
-                }else{
-                    const hasAccount = await UserModel.findOne({account});
-                    if (hasAccount) {
-                        res.send({
-                            status: 0,
-                            type: '',
-                            message: '密码错误'
-                        })
-                    } else {
-                        res.send({
-                            status: 0,
-                            type: '',
-                            message: '账号不存在'
-                        })
-                    }
-                }
-            }catch (err) {
-                console.log('login', err.message);
-                res.send({
-                    status: 0,
-                    type: 'ERROR_DB',
-                    message: err.message
-                })
-            }
 
-        })
+    /**
+     * 登录
+     * @param {*} account 
+     * @param {*} password 
+     */
+    async login(account, password) {
+        try {
+            if (!account) {
+                throw new Error('account is required');
+            } else if (!password) {
+                throw new Error('password is required');
+            }
+        }catch (err) {
+            return({
+                status: 0,
+                type: 'ERROR_PARAMS',
+                message: err.message
+            })
+        }
+        try {
+            const user_obj = await UserModel.findOne({account, password});
+            if (user_obj) {
+                // 登陆成功
+                const {name, account} = user_obj;
+                const id = user_obj.id.toString();
+                const resourceList = await ResourceModel.find();
+                let resources = [];
+                resourceList.forEach(function(item){
+                    resources.push(item.id);
+                });
+                const permissions = await allowedPermissions(id, resources);
+                const roles = await userRoles(id);
+                const mix = { id, name, account, permissions, roles };
+                return({
+                    status: 1,
+                    type: 'SUCCESS',
+                    response: mix
+                });
+            }else{
+                const hasAccount = await UserModel.findOne({account});
+                if (hasAccount) {
+                    return({
+                        status: 0,
+                        type: '',
+                        message: '密码错误'
+                    })
+                } else {
+                    return({
+                        status: 0,
+                        type: '',
+                        message: '账号不存在'
+                    })
+                }
+            }
+        }catch (err) {
+            console.log('login', err.message);
+            return({
+                status: 0,
+                type: 'ERROR_DB',
+                message: err.message
+            })
+        }
     }
 
-    async logout(req, res, next) {
-        req.session.user_id = null
-        req.session.destroy();
-        res.send({
-            status: 1
-        })
-    }
-
-    async getProfile(req, res, next) {
-        const user_id = req.session.user_id;
+    /**
+     * 当前用户信息
+     * @param {*} user_id 
+     */
+    async getProfile(user_id) {
         if(!user_id || !Number(user_id)){
-            res.send({
+            return({
                 status: 0,
                 type: 'ERROR_PARAMS',
                 message: 'invalid user_id'
             })
-            return
         }
         try{
             const resourceList = await ResourceModel.find();
@@ -163,14 +160,14 @@ class User extends BaseComponent{
             const user_obj = await UserModel.findOne({id: user_id}, cols);
             const {id, name, account} = user_obj;
             const mix = { id, name, account, permissions, roles };
-            res.send({
+            return({
                 status: 1,
                 type: 'SUCCESS',
                 response: mix
             });
         }catch(err){
             console.log('getProfile', err.message);
-            res.send({
+            return({
                 status: 0,
                 type: 'ERROR_DB',
                 message: err.message
@@ -301,10 +298,7 @@ class User extends BaseComponent{
 
     /**
      * 删除用户,并移除角色对应关系
-     * @param req
-     * @param res
-     * @param next
-     * @returns {Promise.<void>}
+     * @param {*} user_id 
      */
     async deleteUser (user_id) {
         if (!user_id || !Number(user_id)) {
@@ -334,20 +328,15 @@ class User extends BaseComponent{
 
     /**
      * 获取单个用户, 及对应角色和资源的权限
-     * @param req
-     * @param res
-     * @param next
-     * @returns {Promise.<void>}
+     * @param {*} user_id 
      */
-    async getUserById(req, res, next){
-        const user_id = req.params.user_id;
+    async getUserById(user_id) {
         if(!user_id || !Number(user_id)){
-            res.send({
+            return({
                 status: 0,
                 type: 'ERROR_PARAMS',
                 message: 'invalid user_id'
             })
-            return
         }
         try{
             const resourceList = await ResourceModel.find();
@@ -360,14 +349,14 @@ class User extends BaseComponent{
             const user_obj = await UserModel.findOne({id: user_id}, cols);
             const {id, name, account} = user_obj;
             const mix = { id, name, account, permissions, roles };
-            res.send({
+            return({
                 status: 1,
                 type: 'SUCCESS',
                 response: mix
             });
         }catch(err){
             console.log('getUserById', err.message);
-            res.send({
+            return({
                 status: 0,
                 type: 'ERROR_DB',
                 message: err.message
@@ -377,68 +366,59 @@ class User extends BaseComponent{
 
     /**
      * 更新用户
-     * @param req
-     * @param res
-     * @param next
-     * @returns {Promise.<void>}
+     * @param {*} user_id 
+     * @param {*} name 
+     * @param {*} password 
+     * @param {*} roles 
      */
-    async updateUser(req, res, next){
-        const user_id = req.params.user_id;
-        const form = new formidable.IncomingForm();
-        form.parse(req, async(err, fields, files) => {
-            const {name, password, roles} = fields;
-            try{
-                if(!user_id || !Number(user_id)){
-                    throw new Error('invalid user_id')
-                }
-            }catch(err){
-                res.send({
-                    status: 0,
-                    type: 'ERROR_PARAMS',
-                    message: err.message
-                })
+    async updateUser(user_id, name, password, roles){
+        try{
+            if(!user_id || !Number(user_id)){
+                throw new Error('invalid user_id')
             }
-            try{
-                let newUser = {};
-                if (name) {
-                    newUser['name'] = name;
-                }
-                if (password) {
-                    newUser['password'] = password;
-                }
-                await UserModel.update({id: user_id}, newUser)
-                if (roles) {
-                    const _now = await userRoles(user_id);
-                    await removeUserRoles(user_id, _now);
-                    await addUserRoles(user_id, roles);
-                }
-                res.send({
-                    status: 1,
-                    type: 'SUCCESS'
-                })
-            }catch(err){
-                console.log('updateUser', err.message);
-                res.send({
-                    status: 0,
-                    type: 'ERROR_DB',
-                    message: err.message
-                })
+        }catch(err){
+            return({
+                status: 0,
+                type: 'ERROR_PARAMS',
+                message: err.message
+            })
+        }
+        try{
+            let newUser = {};
+            if (name) {
+                newUser['name'] = name;
             }
-        })
+            if (password) {
+                newUser['password'] = password;
+            }
+            await UserModel.update({id: user_id}, newUser)
+            if (roles) {
+                const _now = await userRoles(user_id);
+                await removeUserRoles(user_id, _now);
+                await addUserRoles(user_id, roles);
+            }
+            return({
+                status: 1,
+                type: 'SUCCESS'
+            })
+        }catch(err){
+            console.log('updateUser', err.message);
+            return({
+                status: 0,
+                type: 'ERROR_DB',
+                message: err.message
+            })
+        }
     }
 
     /**
      * 检查重名
-     * @param req
-     * @param res
-     * @param next
-     * @returns {Promise.<void>}
+     * @param {*} name 
      */
-    async isUserNameAvailable (req, res, next) {
-        const name = req.params.name;
+    async isUserNameAvailable (name) {
         try {
             const user = await UserModel.find({name: name});
-            res.send({
+            return({
                 status: 1,
                 type: 'SUCCESS',
                 response: {
@@ -447,7 +427,7 @@ class User extends BaseComponent{
             })
         } catch (err) {
             console.log('isUserNameAvailable', err.message);
-            res.send({
+            return({
                 status: 0,
                 type: 'ERROR_DB',
                 message: err.message
@@ -455,13 +435,11 @@ class User extends BaseComponent{
         }
     }
 
-    // TODO:个人改密接口
     /**
-     * 个人改密
-     * @param req
-     * @param res
-     * @param next
-     * @returns {Promise.<void>}
+     * 当前用户改密
+     * @param {*} req 
+     * @param {*} res 
+     * @param {*} next 
      */
     async updateSelfPassword(req, res, next) {
         const user_id = req.session.user_id;
@@ -511,200 +489,5 @@ class User extends BaseComponent{
             }
         })
     }
-
-
-
-    // 已停用, 被其他函数代替
-    async addUserRoles(){
-        const user_id = req.params.user_id;
-        const form = new formidable.IncomingForm();
-        const _f = function(roles){
-            return new Promise(function(resolve, reject){
-                global.acl.addUserRoles(user_id, roles, function(err){
-                    resolve(err);
-                })
-            })
-
-        }
-        form.parse(req, async(err, fields, files) => {
-            const {roles} = fields;
-            try{
-                if(!user_id || !Number(user_id)){
-                    throw new Error('参数错误')
-                }
-                if(!roles){
-                    throw new Error('参数错误')
-                }
-            }catch(err){
-                console.log(err.message);
-                res.send({
-                    status: 0,
-                    type: 'GET_WRONG_PARAM',
-                    message: err.message
-                })
-                return
-            }
-            try{
-                const _result = await _f(roles);
-                res.send({
-                    status: 1,
-                    success: '添加角色成功'
-                })
-            }catch(err){
-                console.log('添加角色失败', err);
-                res.send({
-                    status: 0,
-                    type: 'ERROR_UPDATE_USER_ROLE',
-                    message: '添加角色失败'
-                })
-            }
-        })
-    }
-
-    // 已停用, 被其他函数代替
-    async removeUserRoles(){
-        const user_id = req.params.user_id;
-        const form = new formidable.IncomingForm();
-        const _f = function(roles){
-            return new Promise(function(resolve, reject){
-                global.acl.removeUserRoles(user_id, roles, function(err){
-                    resolve(err);
-                })
-            })
-
-        }
-        form.parse(req, async(err, fields, files) => {
-            const {roles} = fields;
-            try{
-                if(!user_id || !Number(user_id)){
-                    throw new Error('参数错误')
-                }
-                if(!roles){
-                    throw new Error('参数错误')
-                }
-            }catch(err){
-                console.log(err.message);
-                res.send({
-                    status: 0,
-                    type: 'GET_WRONG_PARAM',
-                    message: err.message
-                })
-                return
-            }
-            try{
-                const _result = await _f(roles);
-                res.send({
-                    status: 1,
-                    success: '解除角色成功'
-                })
-            }catch(err){
-                console.log('解除角色失败', err);
-                res.send({
-                    status: 0,
-                    type: 'ERROR_UPDATE_USER_ROLE',
-                    message: '解除角色失败'
-                })
-            }
-        })
-    }
-
-    // 已停用, 被其他函数代替
-    async getUserRoles(req, res, next){
-        const user_id = req.params.user_id;
-        function _f(user_id){
-            return new Promise(function(resolve,reject){
-                global.acl.userRoles(user_id, function(err, resources){
-                    resolve(resources);
-                })
-            })
-        }
-        try{
-            if(!user_id || !Number(user_id)){
-                throw new Error('参数错误')
-            }
-        }catch(err){
-            console.log(err.message);
-            res.send({
-                status: 0,
-                type: 'GET_WRONG_PARAM',
-                message: err.message
-            })
-            return
-        }
-        try{
-            const _result = await _f(user_id);
-            res.send(_result);
-        }
-        catch(err){
-            console.log('获取用户角色失败', err);
-            res.send({
-                type: 'ERROR_GET_USER_ROLE',
-                message: '获取用户角色失败'
-            })
-        }
-    }
-
-    // 已停用, 被其他函数代替
-    async setUserRoles(req, res, next){
-        const user_id = req.params.user_id;
-        const form = new formidable.IncomingForm();
-        function _f1(user_id){
-            return new Promise(function(resolve,reject){
-                global.acl.userRoles(user_id, function(err, old_roles){
-                    resolve(old_roles);
-                })
-            })
-        }
-        function _f2(user_id, roles_to_remove){
-            return new Promise(function(resolve,reject){
-                global.acl.removeUserRoles(user_id, roles_to_remove, function(err){
-                    resolve(err);
-                })
-            })
-        }
-        function _f3(user_id, roles_to_add){
-            return new Promise(function(resolve,reject){
-                global.acl.addUserRoles(user_id, roles_to_add, function(err){
-                    resolve(err);
-                })
-            })
-        }
-        form.parse(req, async(err, fields, files) => {
-            const {roles} = fields;
-            try{
-                if(!user_id || !Number(user_id)){
-                    throw new Error('参数错误')
-                }
-                if(!roles){
-                    throw new Error('参数错误')
-                }
-            }catch(err){
-                console.log(err.message);
-                res.send({
-                    status: 0,
-                    type: 'GET_WRONG_PARAM',
-                    message: err.message
-                })
-                return
-            }
-            try{
-                const _now = await _f1(user_id);
-                await _f2(user_id, _now);
-                await _f3(user_id, roles);
-                res.send({
-                    status: 1,
-                    success: '设定角色成功'
-                })
-            }catch(err){
-                console.log('设定角色失败', err);
-                res.send({
-                    status: 0,
-                    type: 'ERROR_UPDATE_USER_ROLE',
-                    message: '设定角色失败'
-                })
-            }
-        })
-    }
-
 }
 export default new User()
